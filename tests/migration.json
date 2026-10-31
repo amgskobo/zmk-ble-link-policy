@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "from": "zmk-ble-messenger",
+  "to": "zmk-ble-link-policy",
+  "behavior": "unchanged selected-only policy; namespace and ownership migration",
+  "production": [
+    {
+      "old": "src/interpose/link_service.c",
+      "new": "src/link_service.c"
+    },
+    {
+      "old": "src/interpose/link_policy.c",
+      "new": "src/link_policy.c"
+    },
+    {
+      "old": "src/interpose/link_policy.h",
+      "new": "src/link_policy.h"
+    }
+  ],
+  "fixtures": {
+    "pure": "tests/host/test_link_policy.c -> new owner same relative path",
+    "native_policy": "27 default + 9 fast cases -> new owner tests/native/idle-links",
+    "messenger_composition": "2 original traffic/refusal cases -> Messenger tests/native/link-policy-composition; original assertions retained",
+    "pure_faults": "55 -> new owner tests/mutation/mutate_idle_links.py",
+    "native_faults": "37 -> new owner tests/mutation/mutate_link_service.py",
+    "traffic_fault": "frame-work-storm -> Messenger composition negative control"
+  },
+  "external_original_identity": "before-identities.json in the migration evidence directory",
+  "added_regression": "Independent test_irrelevant_parameters_do_not_schedule retains excluded/unreadable parameter notifications after the original traffic scenario moves to Messenger. The unrelated-param-wake compiled fault survived before this assertion and must fail afterwards.",
+  "post_migration_extension": "Request capacity/yield: original fixtures/faults retained; adds pure capacity scenario and4 controls, native queued-work/reselection/info-race/clock cases and3 controls, observations parser fixtures. Current totals59 pure faults;31/9 native cases;40 native faults."
+}

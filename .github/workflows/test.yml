@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: zmkfirmware/zmk-build-arm@sha256:edb1c953438c6f720ddb79c3762f3972013b7fbbaf4fff3592fc869983e7afc5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {suite: host, core: upstream}
+          - {suite: native, core: upstream}
+          - {suite: integration, core: upstream}
+          - {suite: integration, core: dya}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Prepare an isolated immutable dependency graph
+        if: matrix.suite != 'host'
+        run: >-
+          python3 tests/prepare-workspace.py --core ${{ matrix.core }}
+          --output "${{ runner.temp }}/zblp-workspace" --allow-network
+      - name: Run the complete owner lane
+        env:
+          SUITE: ${{ matrix.suite }}
+          CORE: ${{ matrix.core }}
+          WORKSPACE: ${{ runner.temp }}/zblp-workspace
+          OUTPUT: ${{ runner.temp }}/zblp-results
+        run: |
+          if [ "$SUITE" = host ]; then
+            python3 tests/run-ci.py --suite host --output "$OUTPUT"
+          else
+            python3 tests/run-ci.py --suite "$SUITE" --core "$CORE" --workspace "$WORKSPACE" --output "$OUTPUT"
+          fi
+      - name: Preserve ordered results, identities and build artifacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ble-link-policy-${{ matrix.suite }}-${{ matrix.core }}-${{ github.run_attempt }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/zblp-results
+            ${{ runner.temp }}/zblp-workspace/preparation
+            ${{ runner.temp }}/zblp-workspace/manifest
+            ${{ runner.temp }}/zblp-workspace/workspace.json

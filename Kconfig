@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: GPL-3.0-only
+config ZMK_BLE_LINK_POLICY
+    bool "Prioritize the selected BLE HID host connection"
+    depends on ZMK_BLE && BT_PERIPHERAL
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+    default n
+    help
+      The selected BLE HID endpoint requests the configured peripheral
+      preference. Other known host links request latency 30, including while
+      application data is transferred. USB means no selected BLE HID host.
+      Split links, unknown hosts and other local identities are excluded.
+      Does not require Studio or Messenger and does not change bonds,
+      advertising, PHY, packet sizes or supervision timeout. Remote hosts
+      decide actual parameters; requests are bounded and event driven.
+
+config ZMK_BLE_LINK_POLICY_LOG_LEVEL
+    int "BLE link policy log level"
+    range 0 4
+    default 3
+    help
+      Numeric slot and connection-parameter observations only; no addresses,
+      input values, message contents or authentication data.
+
+config ZMK_BLE_LINK_POLICY_DIAGNOSTICS
+    bool "Record bounded link worker and API wall times"
+    depends on ZMK_BLE_LINK_POLICY && LOG
+    default n
+    help
+      Emit one numeric linkwork record after a worker that issued a request.
+      Records worker/API wall time, request count, logical host mask, selected
+      slot and pending delay. No payload, address, heap, new thread or timer.
+      Clock samples use the system cycle counter and exclude the final summary
+      log's own cost. This is not CPU, radio airtime or host HID delivery timing.

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: GPL-3.0-only
+cmake_minimum_required(VERSION 3.20.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(zblp_idle_link_boundary)
+set(addon ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
+set(interpose ${addon}/src)
+set(owner ${addon})
+if(NOT ZBLP_LINK_SOURCE)
+  set(ZBLP_LINK_SOURCE ${interpose}/link_service.c)
+endif()
+# Default fixture: the selected host is asked for 12..12 (the production range). -DZBLP_IDLE_LINKS_FAST=ON builds the
+# fixture whose selected range is 7..7 (below the 15 ms Apple hosts accept) and runs fast.c instead of main.c.
+if(ZBLP_IDLE_LINKS_FAST)
+  set(zbm_main fast.c)
+  set(zbm_selected_interval 7)
+else()
+  set(zbm_main main.c)
+  set(zbm_selected_interval 12)
+endif()
+target_include_directories(app PRIVATE include ${owner}/include ${interpose})
+target_compile_definitions(app PRIVATE ZBLP_LINK_SOURCE="${ZBLP_LINK_SOURCE}" CONFIG_ZMK_BLE_LINK_POLICY_LOG_LEVEL=3
+  CONFIG_BT_SMP=1
+  CONFIG_BT_PERIPHERAL_PREF_MIN_INT=${zbm_selected_interval} CONFIG_BT_PERIPHERAL_PREF_MAX_INT=${zbm_selected_interval}
+  CONFIG_BT_PERIPHERAL_PREF_LATENCY=0 CONFIG_BT_PERIPHERAL_PREF_TIMEOUT=400)
+target_sources(app PRIVATE ${zbm_main} ${interpose}/link_policy.c)
+target_compile_options(app PRIVATE -Wall -Wextra -Werror)
+if(NOT DEFINED ZBLP_DIAGNOSTICS)
+  set(ZBLP_DIAGNOSTICS ON)
+endif()
+if(ZBLP_DIAGNOSTICS)
+  target_compile_definitions(app PRIVATE CONFIG_ZMK_BLE_LINK_POLICY_DIAGNOSTICS=1)
+endif()

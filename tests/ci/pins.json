@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "image": "zmkfirmware/zmk-build-arm@sha256:edb1c953438c6f720ddb79c3762f3972013b7fbbaf4fff3592fc869983e7afc5",
+  "cores": {
+    "upstream": [
+      {
+        "name": "zmk",
+        "path": "zmk",
+        "url": "https://github.com/zmkfirmware/zmk",
+        "revision": "5b51501fead672c41b5cfb396f3dafe0894bf4e9"
+      },
+      {
+        "name": "zephyr",
+        "path": "zephyr",
+        "url": "https://github.com/zmkfirmware/zephyr",
+        "revision": "10ba6d0cb38bc3d258775d27982f707599320085",
+        "west-commands": "scripts/west-commands.yml"
+      },
+      {
+        "name": "zmk-studio-messages",
+        "path": "modules/msgs/zmk-studio-messages",
+        "url": "https://github.com/zmkfirmware/zmk-studio-messages",
+        "revision": "6cb4c283e76209d59c45fbcb218800cd19e9339d"
+      },
+      {
+        "name": "nanopb",
+        "path": "modules/lib/nanopb",
+        "url": "https://github.com/zephyrproject-rtos/nanopb",
+        "revision": "7307ce399b81ddcb3c3a5dc862c52d4754328d38"
+      },
+      {
+        "name": "cmsis",
+        "path": "modules/hal/cmsis",
+        "url": "https://github.com/zephyrproject-rtos/cmsis",
+        "revision": "d1b8b20b6278615b00e136374540eb1c00dcabe7"
+      },
+      {
+        "name": "hal_nordic",
+        "path": "modules/hal/nordic",
+        "url": "https://github.com/zephyrproject-rtos/hal_nordic",
+        "revision": "37ca068d7b013fb65a2acc9306bffa48a3e72839"
+      },
+      {
+        "name": "tinycrypt",
+        "path": "modules/crypto/tinycrypt",
+        "url": "https://github.com/zephyrproject-rtos/tinycrypt",
+        "revision": "1012a3ebee18c15ede5efc8332ee2fc37817670f"
+      },
+      {
+        "name": "mbedtls",
+        "path": "modules/crypto/mbedtls",
+        "url": "https://github.com/zephyrproject-rtos/mbedtls",
+        "revision": "4952e1328529ee549d412b498ea71c54f30aa3b1"
+      },
+      {
+        "name": "lvgl",
+        "path": "modules/lib/gui/lvgl",
+        "url": "https://github.com/zmkfirmware/lvgl",
+        "revision": "f1db87ee98f1810328a8419572fa42a3b5f352ae"
+      },
+      {
+        "name": "hal_stm32",
+        "path": "modules/hal/stm32",
+        "url": "https://github.com/zmkfirmware/hal_stm32",
+        "revision": "4fcc3a3f32abe1c4cb76d9d1cef967728dd03908"
+      }
+    ],
+    "dya": [
+      {
+        "name": "zmk",
+        "path": "zmk",
+        "url": "https://github.com/cormoran/zmk",
+        "revision": "e5c9b6915b56801193e359dd9bad4a167ce0d1b8"
+      },
+      {
+        "name": "zephyr",
+        "path": "zephyr",
+        "url": "https://github.com/zmkfirmware/zephyr",
+        "revision": "10ba6d0cb38bc3d258775d27982f707599320085",
+        "west-commands": "scripts/west-commands.yml"
+      },
+      {
+        "name": "zmk-studio-messages",
+        "path": "modules/msgs/zmk-studio-messages",
+        "url": "https://github.com/cormoran/zmk-studio-messages",
+        "revision": "89b81d2e587fce807b668dff2a6967a40beef421"
+      },
+      {
+        "name": "nanopb",
+        "path": "modules/lib/nanopb",
+        "url": "https://github.com/zephyrproject-rtos/nanopb",
+        "revision": "7307ce399b81ddcb3c3a5dc862c52d4754328d38"
+      },
+      {
+        "name": "cmsis",
+        "path": "modules/hal/cmsis",
+        "url": "https://github.com/zephyrproject-rtos/cmsis",
+        "revision": "d1b8b20b6278615b00e136374540eb1c00dcabe7"
+      },
+      {
+        "name": "hal_nordic",
+        "path": "modules/hal/nordic",
+        "url": "https://github.com/zephyrproject-rtos/hal_nordic",
+        "revision": "37ca068d7b013fb65a2acc9306bffa48a3e72839"
+      },
+      {
+        "name": "tinycrypt",
+        "path": "modules/crypto/tinycrypt",
+        "url": "https://github.com/zephyrproject-rtos/tinycrypt",
+        "revision": "1012a3ebee18c15ede5efc8332ee2fc37817670f"
+      },
+      {
+        "name": "mbedtls",
+        "path": "modules/crypto/mbedtls",
+        "url": "https://github.com/zephyrproject-rtos/mbedtls",
+        "revision": "4952e1328529ee549d412b498ea71c54f30aa3b1"
+      },
+      {
+        "name": "lvgl",
+        "path": "modules/lib/gui/lvgl",
+        "url": "https://github.com/zmkfirmware/lvgl",
+        "revision": "f1db87ee98f1810328a8419572fa42a3b5f352ae"
+      },
+      {
+        "name": "hal_stm32",
+        "path": "modules/hal/stm32",
+        "url": "https://github.com/zmkfirmware/hal_stm32",
+        "revision": "4fcc3a3f32abe1c4cb76d9d1cef967728dd03908"
+      }
+    ]
+  }
+}

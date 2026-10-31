@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "owner": "zmk-ble-link-policy",
+  "supported_cores": [
+    "stock-zmk",
+    "dya"
+  ],
+  "commands": [
+    "python3 tests/prepare-workspace.py --core upstream --output NEW_WORKSPACE --allow-network",
+    "python3 tests/run-ci.py --suite host --output NEW_FOLDER",
+    "python3 tests/run-ci.py --suite native --workspace PATH --output NEW_FOLDER",
+    "python3 tests/run-ci.py --suite integration --core upstream --workspace PATH --output NEW_FOLDER",
+    "python3 tests/run-ci.py --suite integration --core dya --workspace PATH --output NEW_FOLDER",
+    "python3 tests/run-host.py --output NEW_FOLDER",
+    "bash tests/native/run.sh",
+    "python3 tests/mutation/mutate_link_service.py --zephyr-base PATH --cmsis-module PATH --output NEW_FOLDER",
+    "python3 tests/run-integration.py --workspace PATH --output NEW_FOLDER"
+  ],
+  "coverage_map": "tests/README.md",
+  "migration": "tests/migration.json",
+  "implementation_families": {
+    "pure_policy": "tests/host/test_link_policy.c; original55 plus4 capacity controls (59 total)",
+    "kernel_lifecycle": "tests/native/idle-links; original27 plus4 default (31 total) +9 fast; original37 plus3 coordinator controls (40 total)",
+    "module_isolation": "tests/test_ownership.py; actual stock/DYA enabled/disabled and no-Studio linked builds; peripheral gate and explicit unsupported request",
+    "timeout_width": "tests/test_timeout_width.py: actual helper, full uint32 numeric oracle,32/64-bit ticks, optimization/coverage/ABI and named compiled faults; TX-stage span stays in Messenger",
+    "work_observations": "tests/observations.py; tests/test_observations.py: schema/width, order/wrap/reset, invalid/unavailable, topology/stale cohorts, timing sum/max/call-count consistency, quota and peak provenance. Physical wall/HID/RF remain separate.",
+    "ci_and_reproduction": "test_ci.py; ci_support.py; prepare-workspace.py; run-ci.py: immutable graph and actual-head checks, fresh outputs, explicit fetch/local cloning, failure exit/order/times, source drift failure and all supported hosted lanes. Owner behavioral assertions remain in original entries."
+  },
+  "gaps": [
+    "Physical host acceptance, negotiated timing, HID delivery, split/radio/power/reset require matching hardware evidence."
+  ],
+  "execution": {
+    "outputs": "Fresh directories only; retain actual exits and raw ordered output/timing.",
+    "repeats": "Each baseline native binary runs three times with identical inputs."
+  },
+  "pins": {
+    "stock-zmk": "5b51501fead672c41b5cfb396f3dafe0894bf4e9",
+    "dya": "e5c9b6915b56801193e359dd9bad4a167ce0d1b8",
+    "zephyr": "10ba6d0cb38bc3d258775d27982f707599320085"
+  },
+  "ci_pins": "tests/ci/pins.json",
+  "hosted_workflow": ".github/workflows/test.yml",
+  "physical_observations": "docs/validation.md"
+}

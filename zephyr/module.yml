@@ -1,0 +1,4 @@
+name: zmk-ble-link-policy
+build:
+  cmake: .
+  kconfig: Kconfig
