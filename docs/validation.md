@@ -28,8 +28,8 @@ observations from different boots, images or parameter policies.
 
 Exercise selected-host promotion, deselection and return; USB/BLE switching;
 all five known hosts; independent refusal/retry and reconnect; split delivery;
-Messenger/Studio contention; and quiet completion. Observe actual negotiated
-interval, latency, supervision timeout and PHY separately from requested values.
+and quiet completion. Observe actual negotiated interval, latency, supervision
+timeout and PHY separately from requested values.
 Pair ordered device observations with actual host HID arrivals before assessing
 transition latency, loss or an end-to-end improvement. Measure radio and power
 with suitable hardware rather than deriving them from workqueue durations.

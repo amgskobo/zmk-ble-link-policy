@@ -45,7 +45,7 @@ python3 tests/run-ci.py --suite integration --core dya --workspace /work/dya --o
 
 Network preparation requires `--allow-network` and a new directory. It fetches
 only the ten exact project commits in the owner manifest; no moving imports
-are resolved. This selection retains the XIAO BLE/Studio and native fixture
+are resolved. This selection retains all required firmware and native fixture
 features. It is a test workspace, not a replacement for a keyboard's manifest.
 With an existing exact workspace use `--from-cache ABS_WORKSPACE` instead;
 new local clones materialize only each selected commit without fetching or
@@ -99,10 +99,11 @@ are recorded boundaries. The original 37 plus three request-quota/continuation
 faults (40 compiled coordinator faults total) must build and fail
 runtime assertions. A compilation error never counts as a killed fault.
 
-Integration builds enabled without Studio/Messenger, diagnostics enabled, enabled with Studio and
-disabled on each core, plus a normal peripheral and a peripheral that requests
-the unsupported option. The latter must emit the specific dependency warning
-and still build with the option, production objects and policy symbol absent.
+Integration builds six configurations on each core: the policy enabled,
+diagnostics enabled, the policy enabled with additional core features, the policy
+disabled, a normal peripheral and a peripheral that requests the unsupported
+option. The latter must emit the specific dependency warning and still build
+with the option, production objects and policy symbol absent.
 All cases validate actual config, sources and symbols. The
 integrating keyboard separately checks central-only source selection and the
 settings-reset exemption with all its local overrides.
@@ -113,11 +114,9 @@ still requires the assigned-y/actual-n result and the exact role expression;
 another symbol's warning cannot supply them. Host negative controls preserve
 these requirements alongside the effective config, source and symbol checks.
 
-Two original traffic/refusal cases and the frame-work-storm fault stay in
-Messenger's tests/native/link-policy-composition, where the actual Messenger
-weak observer is composed with this production policy. This owner's tests do
-not dispatch or import that sibling suite. tests/migration.json maps every
-transferred fixture/fault family and the preserved composition assertions.
+Fixture provenance and assertion ownership are recorded in
+[migration.json](migration.json). This module's test entries dispatch the
+policy's own fixtures and assertions.
 
 Physical negotiated parameters, transition latency, five-host HID, transfer,
 radio duty, power and reset acceptance remain separate and unmeasured here.
@@ -125,8 +124,7 @@ radio duty, power and reset acceptance remain separate and unmeasured here.
 The independent parameter-notification regression fails under the compiled
 `unrelated-param-wake` control. That fault survived the initial fixture split;
 its raw passing mutant and the added assertion are preserved in task evidence.
-The shared timeout helper retains numeric/width/coverage/fault assertions here;
-Messenger's TX-stage span assertions remain only with that distinct owner.
+The timeout helper retains numeric/width/coverage/fault assertions here.
 
 The pure capacity case checks that deferral preserves the attempt budget,
 command gate, idle widening and grace. Real queued unrelated work must run

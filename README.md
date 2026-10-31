@@ -3,9 +3,9 @@
 [日本語](README.ja.md)
 
 Prioritize the selected BLE HID host while keeping other bonded host links
-connected with peripheral latency 30. This independent module needs neither
-Messenger nor Studio. It uses public ZMK endpoint/profile and Zephyr connection
-APIs; no core edits, wrappers, heap, persistent settings or idle periodic work.
+connected with peripheral latency 30. This module uses public ZMK
+endpoint/profile and Zephyr connection APIs; no core edits, wrappers, heap,
+persistent settings or idle periodic work.
 Both unchanged stock ZMK and DYA are supported.
 
 ## Installation
@@ -52,15 +52,6 @@ extend the fixed table. This is a host-link policy, not a provider of BLE
 profiles or additional connection objects. Keep enough `BT_MAX_CONN` capacity
 for the keyboard's own hosts, split, advertising and reconnect requirements.
 
-### Migrating from Messenger
-
-Use exactly one host-parameter policy. If your Messenger revision still declares
-`ZMK_BLE_MESSENGER_IDLE_LINKS`, set `CONFIG_ZMK_BLE_MESSENGER_IDLE_LINKS=n`
-before enabling this module. If that old symbol has been removed from your
-Messenger revision, remove its assignment entirely; assigning an unknown symbol
-can produce a Kconfig warning. Messenger traffic/HID-credit protection and BLE
-Management profile labels/output controls remain independent features.
-
 ### Compatibility and tests
 
 The integration matrix selects these unchanged commits:
@@ -71,8 +62,8 @@ The integration matrix selects these unchanged commits:
 | DYA | `e5c9b6915b56801193e359dd9bad4a167ce0d1b8` |
 | Shared Zephyr | `10ba6d0cb38bc3d258775d27982f707599320085` |
 
-[The complete test pins](tests/ci/pins.json) also fix CMSIS, Nordic HAL,
-TinyCrypt, Mbed TLS, nanopb, the core-specific Studio schema and the SDK image digest.
+[The complete test pins](tests/ci/pins.json) also fix the supporting libraries,
+core build dependencies and SDK image digest.
 Other core revisions need their own integration results. The module does not
 depend on a sibling checkout, AKKB46 configuration or a private build cache.
 See [reproducing CI](tests/README.md#reproducing-ci),
@@ -85,8 +76,8 @@ provided before an actual hosted run.
 The actual selected HID endpoint determines active mode. USB or no endpoint
 means no active BLE HID host. Only connected known host profiles on the default
 identity in the peripheral role are eligible; split-central links, guests,
-other identities and disconnected objects are excluded. Application traffic,
-INFO reads, Messenger admission and Studio locks do not promote a host.
+other identities and disconnected objects are excluded. Application traffic
+does not promote a host.
 
 The selected host is reconciled first. Its preference comes from the four
 `BT_PERIPHERAL_PREF_*` options above. Other hosts request latency 30 and retain
@@ -106,10 +97,9 @@ fences preserve current intent. A peer can refuse or revise the parameters;
 the module cannot cancel a request already accepted by the stack.
 
 No advertisements, profiles, bonds, PHY, packet sizes or transfer sessions are
-owned here. HID buffer protection and Messenger discovery remain their owners'
-separate integration. BLE Management still owns profile labels and DYA RPC.
-The selected platform's own initial parameter update remains a platform action;
-additional application policy providers must not independently fight this one.
+owned here. The selected platform's own initial parameter update remains a
+platform action; additional application policy providers must not independently
+fight this one.
 
 ## Resources and acceptance
 
@@ -145,11 +135,11 @@ policy is not a measured speed or power improvement.
 
 Check the actual selected config, compiled source paths and linked symbols.
 Build every integrating keyboard role, including settings-reset. Remeasure
-selected-host HID arrivals, profile/USB switching, all connected hosts, Studio
-and Messenger coexistence, refusal/reconnect, split and power with matching
-firmware. Host/kernel/build passes do not establish those physical results.
+selected-host HID arrivals, profile/USB switching, all connected hosts,
+refusal/reconnect, split and power with matching firmware. Host/kernel/build
+passes do not establish those physical results.
 
-See [tests/README.md](tests/README.md) and the [assertion migration map](tests/migration.json).
+See [tests/README.md](tests/README.md).
 
 ## Troubleshooting
 
@@ -166,8 +156,6 @@ See [tests/README.md](tests/README.md) and the [assertion migration map](tests/m
   default-off diagnostic option, INFO logging, console and boot identity;
   absence is not a zero-duration measurement.
 
-## License and origin
+## License
 
-GPL-3.0-only; see [LICENSE](LICENSE). The policy and its original assertions
-were extracted from ZMK BLE Messenger. [The migration map](tests/migration.json)
-retains ownership/provenance and the composition cases that stay with Messenger.
+GPL-3.0-only; see [LICENSE](LICENSE).

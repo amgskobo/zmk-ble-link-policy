@@ -9,9 +9,9 @@ config ZMK_BLE_LINK_POLICY
       preference. Other known host links request latency 30, including while
       application data is transferred. USB means no selected BLE HID host.
       Split links, unknown hosts and other local identities are excluded.
-      Does not require Studio or Messenger and does not change bonds,
-      advertising, PHY, packet sizes or supervision timeout. Remote hosts
-      decide actual parameters; requests are bounded and event driven.
+      Does not change bonds, advertising, PHY, packet sizes or supervision
+      timeout. Remote hosts decide actual parameters; requests are bounded
+      and event driven.
 
 config ZMK_BLE_LINK_POLICY_LOG_LEVEL
     int "BLE link policy log level"

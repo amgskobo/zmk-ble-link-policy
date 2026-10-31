@@ -2,10 +2,11 @@
 
 Own the selected-host active/idle connection policy, its lifecycle coordinator,
 numeric observations and direct tests. Support both unchanged stock ZMK and
-DYA. Keep the module independent of Messenger, Studio and BLE Management.
-Keyboard wiring, enabled module graphs, production defaults and split/HID/Studio
-composition belong to the integrating keyboard. Keep the project's documented
-translations consistent.
+DYA. Keep documentation and reviews focused on this module's connection policy,
+lifecycle, diagnostics and tests. Do not add unrelated application dependencies,
+migration instructions or coexistence requirements. Keyboard wiring, enabled
+module graphs, production defaults and split/HID composition belong to the
+integrating keyboard. Keep the project's documented translations consistent.
 
 ## Publication privacy and local execution
 
@@ -60,7 +61,7 @@ Resolve actual west imports, explicit module selections/local overrides,
 enabled Kconfig, backend and dependency revisions. A sibling checkout or cache
 name does not identify what a container builds. Read relevant root/nested
 dependency instructions and required documents once per checkout/revision,
-including selected ZMK/Zephyr, HAL, crypto, Studio schema and test infrastructure.
+including selected ZMK/Zephyr, HAL, crypto and test infrastructure.
 Record paths/revisions and READ, NO AGENTS or INACCESSIBLE. Block only dependent
 checks and continue independent work. Never patch selected dependencies, disable
 required features or implicitly update pins/caches to clear a gate.
@@ -71,10 +72,10 @@ required features or implicitly update pins/caches to clear a gate.
   active BLE host. Manage logical profiles 0..4 only: known connected hosts in
   the peripheral role on the default identity. Exclude guests, other identities,
   disconnected objects and split/central links.
-- Application traffic, admission and lock state do not promote a host.
+- Application traffic does not promote a host.
   Advertising, profiles/bonds, PHY, packet sizes, transfer protocols, HID report
-  arbitration and Studio RPC stay with their owners. Integrators own the
-  configured `BT_PERIPHERAL_PREF_*` values and connection-object capacity.
+  arbitration stay with their owners. Integrators own the configured
+  `BT_PERIPHERAL_PREF_*` values and connection-object capacity.
 - Preserve selected-first reconciliation, at most one parameter API call per
   worker, and immediate continuation of ready deferred requests after reading
   the current endpoint again. Deferral consumes no attempt and does not widen
@@ -101,7 +102,7 @@ requirements from that public procedure rather than a contributor's workstation.
 | --- | --- |
 | Documentation/instructions only | `git diff --check`, changed links/command references and EN/JA consistency. Without Git history, check the before/after diff with `git diff --no-index --check`. |
 | Pure policy, numeric parser or timeout helper | Full host entry and affected named controls; include native/both-core checks when the coordinator interface or timing boundary changes. |
-| Lifecycle, queues, Kconfig, build/module integration or public interfaces | Full host, native/mutation and unchanged stock/DYA firmware entries below; retain enabled/diagnostics/Studio/disabled/peripheral/rejected-request cases. |
+| Lifecycle, queues, Kconfig, build/module integration or public interfaces | Full host, native/mutation and unchanged stock/DYA firmware entries below; retain every existing integration mode, diagnostic setting, role and rejected-request case. |
 | CI runners, dependency selection or test infrastructure | Complete four-lane owner matrix, affected positive/negative guards and documented preparation paths. No `--only` result qualifies as the full matrix. |
 
 ```sh

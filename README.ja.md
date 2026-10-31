@@ -3,9 +3,8 @@
 [English](README.md)
 
 選択中の BLE HID ホストを優先し、ほかの既知ホストとの接続には peripheral
-latency 30 を要求する独立モジュールです。Messenger と Studio のどちらにも
-依存しません。stock ZMK と DYA の公開 endpoint・profile API、および Zephyr の
-接続 API を使い、コアの修正や関数の置き換えを行いません。
+latency 30 を要求するモジュールです。stock ZMK と DYA の公開 endpoint・profile API、
+および Zephyr の接続 API を使い、コアの修正や関数の置き換えを行いません。
 
 ## 導入
 
@@ -49,14 +48,6 @@ timeout の単位は 10 ms（400 は 4 秒）です。この例は既存の接�
 プロファイルや接続オブジェクトを提供するモジュールではないため、ホスト・split・広告・
 再接続に必要な `BT_MAX_CONN` の容量は統合するキーボード側で確保します。
 
-### Messenger からの移行
-
-ホストの接続パラメーターを制御するポリシーは1個だけにします。Messenger が旧シンボル
-`ZMK_BLE_MESSENGER_IDLE_LINKS` をまだ定義する版なら、先に
-`CONFIG_ZMK_BLE_MESSENGER_IDLE_LINKS=n` にします。旧シンボルが削除済みの版では
-その設定行自体を削除します。未定義のシンボルへの代入は Kconfig 警告の原因になります。
-Messenger の通信・HID 送信資源保護、BLE Management の表示名・出力先操作は別機能です。
-
 ### 互換性とテスト
 
 以下のコミットを変更せずにビルド検証します。
@@ -67,8 +58,8 @@ Messenger の通信・HID 送信資源保護、BLE Management の表示名・出
 | DYA | `e5c9b6915b56801193e359dd9bad4a167ce0d1b8` |
 | 共通 Zephyr | `10ba6d0cb38bc3d258775d27982f707599320085` |
 
-[テスト用の固定一覧](tests/ci/pins.json)では CMSIS・Nordic HAL・TinyCrypt・nanopb・
-コア別の Studio スキーマ・SDK イメージも固定します。他のリビジョンには個別の検証が必要です。
+[テスト用の固定一覧](tests/ci/pins.json)では補助ライブラリ・コアのビルド依存・
+SDK イメージも固定します。他のリビジョンには個別の検証が必要です。
 隣接リポジトリ、AKKB46 の設定、非公開キャッシュへの依存はありません。
 [CI の再現手順](tests/README.md#reproducing-ci)、[テスト契約](tests/maintenance.json)、
 [検証と実機受け入れの手順](docs/validation.md)を参照してください。
@@ -80,7 +71,7 @@ Messenger の通信・HID 送信資源保護、BLE Management の表示名・出
 USB または出力先なしの場合、active な BLE HID ホストはありません。
 既知のホストプロファイルに属し、default identity の peripheral として接続中のリンクだけを
 扱います。split 用の central 接続、ゲスト、別 identity、切断済みの接続は除外します。
-Messenger の転送・INFO 読み出し・認証や Studio のロック状態では昇格させません。
+アプリケーションの通信では昇格させません。
 
 選択先を先に処理し、上記 `BT_PERIPHERAL_PREF_*` の値を要求します。ほかのホストには
 latency 30 を要求し、設定済みの supervision timeout を維持します。idle の間隔下限は
@@ -96,8 +87,7 @@ latency 30 を要求し、設定済みの supervision timeout を維持します
 相手は要求を拒否・変更でき、スタックが受け付けた要求をこのモジュールから取り消すことはできません。
 
 広告・プロファイル・ボンド・PHY・パケット長・転送セッションは変更しません。
-HID の送信資源保護と Messenger の広告は現在の所有先、表示名と DYA RPC は BLE Management が
-担当します。プラットフォームの接続直後の自動更新は引き続き存在します。
+プラットフォームの接続直後の自動更新は引き続き存在します。
 別のアプリ側ポリシーが同じリンクへ矛盾した要求を出さないよう、統合時に調整してください。
 
 ## 資源と確認範囲
@@ -129,10 +119,10 @@ Flash／RAM の増減は実際のリンク結果とログ設定で確認して�
 
 実際の config・コンパイル対象・シンボルを確認し、統合先の左右と settings-reset をビルドします。
 同一性を確認したファームウェアで、ホスト HID 到着、プロファイル・USB 切替、複数ホスト、
-Studio／Messenger 併用、拒否・再接続、split、消費電力を再測定する必要があります。
+拒否・再接続、split、消費電力を再測定する必要があります。
 ホスト・カーネル・ビルド検証では、これらの実機受け入れは成立しません。
 
-[テスト契約](tests/README.md)と[既存 assertion の移設表](tests/migration.json)を参照してください。
+[テスト手順](tests/README.md)を参照してください。
 
 ## 問題の切り分け
 
@@ -145,8 +135,6 @@ Studio／Messenger 併用、拒否・再接続、split、消費電力を再測�
 - `linkwork` がない場合、完了した要求処理を観測できていません。診断設定・INFO ログ・
   コンソール・起動識別子を確認し、未観測を処理時間ゼロとして扱わないでください。
 
-## ライセンスと由来
+## ライセンス
 
 GPL-3.0-only です。[LICENSE](LICENSE)を参照してください。
-ポリシーと元の assertion は ZMK BLE Messenger から移設しました。
-[移設表](tests/migration.json)に由来と、Messenger 側に残る組み合わせ検証を記載しています。
