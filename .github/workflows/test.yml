@@ -36,7 +36,7 @@ jobs:
         if: matrix.suite != 'host'
         run: >-
           python3 tests/prepare-workspace.py --core ${{ matrix.core }}
-          --output "${{ runner.temp }}/zblp-workspace" --allow-network
+          --output "$RUNNER_TEMP/zblp-workspace" --allow-network
       - name: Run the complete owner lane
         env:
           SUITE: ${{ matrix.suite }}

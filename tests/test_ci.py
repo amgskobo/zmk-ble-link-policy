@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -112,3 +113,27 @@ class CI(unittest.TestCase):
             (root / '__pycache__').mkdir()
             (root / '__pycache__/ignored').write_text('runtime')
             self.assertEqual(set(source_identity(root)), {'src/real.c'})
+
+    def test_preparation_uses_the_container_visible_temp_directory(self):
+        data = yaml.load((ROOT / '.github/workflows/test.yml').read_text(), Loader=yaml.BaseLoader)
+        prepare = next(step for step in data['jobs']['test']['steps']
+                       if step.get('name') == 'Prepare an isolated immutable dependency graph')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            executable = root / 'python3'
+            executable.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$ARGUMENT_RECORD"\n')
+            executable.chmod(0o755)
+            record = root / 'arguments'
+            visible = root / 'container-temp'
+            # Actions translates environment paths for job containers. A context
+            # embedded directly into script text still names the host namespace.
+            command = prepare['run'].replace('${{ matrix.core }}', 'upstream').replace(
+                '${{ runner.temp }}', '/synthetic-host-temp')
+            result = subprocess.run(['sh', '-e', '-c', command], env=dict(
+                os.environ, PATH=str(root) + os.pathsep + os.environ['PATH'],
+                RUNNER_TEMP=str(visible), ARGUMENT_RECORD=str(record)),
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            arguments = record.read_text().splitlines()
+            self.assertEqual(arguments[arguments.index('--output') + 1],
+                             str(visible / 'zblp-workspace'))
