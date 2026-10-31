@@ -3,7 +3,7 @@ name: Test
 
 on:
   push:
-    branches: [main]
+    branches: [main, "codex/ble-link-policy-review"]
   pull_request:
   workflow_dispatch:
 

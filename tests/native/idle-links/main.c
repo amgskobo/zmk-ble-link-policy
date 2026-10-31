@@ -2,6 +2,26 @@
 /* The default fixture: selected host asked for 12..12 (the production range). The stand-ins are in harness.inc. */
 #include "harness.inc"
 
+ZTEST(idle_links, test_unmanaged_selection_has_no_active_slot)
+{
+    selected.ble.profile_index = 4;
+    zassert_equal(managed_selected_slot(selected), 4);
+    selected.ble.profile_index = 5;
+    zassert_equal(managed_selected_slot(selected), UINT8_MAX);
+    wake(); settle();
+    zassert_equal(policy.selected.slot, UINT8_MAX);
+    for (unsigned i = 0; i < 5; i++) {
+        zassert_equal(connections[i].info.le.latency, 30);
+    }
+    selected.ble.profile_index = UINT8_MAX;
+    zassert_equal(managed_selected_slot(selected), UINT8_MAX);
+    selected.ble.profile_index = 0;
+    selected.transport = ZMK_TRANSPORT_USB;
+    zassert_equal(managed_selected_slot(selected), UINT8_MAX);
+    selected.transport = ZMK_TRANSPORT_NONE;
+    zassert_equal(managed_selected_slot(selected), UINT8_MAX);
+}
+
 ZTEST(idle_links, test_selection_during_info_invalidates_first_request)
 {
     selected.ble.profile_index = 4;

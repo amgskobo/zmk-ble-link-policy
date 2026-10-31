@@ -96,3 +96,6 @@ for mode in ('enabled', 'diagnostics', 'studio', 'disabled', 'peripheral', 'reje
         row['hashes'] = {str(f): hashlib.sha256(f.read_bytes()).hexdigest() for f in [elf, build / 'zephyr/.config', build / 'zephyr/zephyr.dts']}
         (a.output / 'results.json').write_text(json.dumps(rows, indent=2))
     print(mode, 'PASS', flush=True)
+
+(a.output / 'dependencies-after.json').write_text(json.dumps(
+    workspace_identity(w, core, pins), indent=2) + '\n', encoding='utf-8')

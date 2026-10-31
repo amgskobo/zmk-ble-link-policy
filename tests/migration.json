@@ -27,5 +27,6 @@
   },
   "external_original_identity": "before-identities.json in the migration evidence directory",
   "added_regression": "Independent test_irrelevant_parameters_do_not_schedule retains excluded/unreadable parameter notifications after the original traffic scenario moves to Messenger. The unrelated-param-wake compiled fault survived before this assertion and must fail afterwards.",
-  "post_migration_extension": "Request capacity/yield: original fixtures/faults retained; adds pure capacity scenario and4 controls, native queued-work/reselection/info-race/clock cases and3 controls, observations parser fixtures. Current totals59 pure faults;31/9 native cases;40 native faults."
+  "post_migration_extension": "Request capacity/yield: original fixtures/faults retained; adds pure capacity scenario and4 controls, native queued-work/reselection/info-race/clock cases and3 controls, observations parser fixtures. Totals at that stage:59 pure faults;31/9 native cases;40 native faults.",
+  "review_extension": "Retains every existing assertion and control; adds unmanaged-selection normalization (32 default/9 fast cases and41 native controls total) and real Git dependency-cleanliness/before-after drift regressions."
 }

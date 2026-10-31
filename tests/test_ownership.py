@@ -18,6 +18,6 @@ class Ownership(unittest.TestCase):
         self.assertNotRegex(text, r'(?m)^\s*(select|imply) ')
     def test_migration_keeps_expected_policy_cases(self):
         text = (ROOT / 'tests/native/idle-links/main.c').read_text()
-        self.assertEqual(len(re.findall(r'ZTEST\(', text)), 31)
+        self.assertEqual(len(re.findall(r'ZTEST\(', text)), 32)
         self.assertEqual(len(re.findall(r'ZTEST\(', (ROOT / 'tests/native/idle-links/fast.c').read_text())), 9)
         self.assertNotIn('zmk_ble_messenger', text)

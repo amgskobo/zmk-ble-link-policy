@@ -121,7 +121,8 @@ are wall microseconds, including preemption/blocking and excluding the final
 summary log, not CPU time or radio occupancy. `invalid` flags ambiguous cycle
 spans/overflow. `pending_ms=4294967295` means no deadline; `active_slot=255`
 means no selected BLE host. `host_mask` records eligible known hosts seen in
-the scan; a stale scan may be partial. Sequence gaps also include no-call work.
+the scan; a stale scan may be partial. A selected profile outside 0..4 is also
+reported as `active_slot=255`. Sequence gaps also include no-call work.
 See [the observation command and limits](tests/README.md). Compare only matching
 firmware, hosts, selected routes and workloads; pair this with real host HID
 arrivals before claiming an end-to-end improvement.

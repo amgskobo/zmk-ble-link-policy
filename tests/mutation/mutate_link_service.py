@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Compile native coordinator negative controls on the selected real kernel.
 
-Two fixtures (tests/native/idle-links): the default one (selected host asked for 12..12, 31 tests) and the fast one
+Two fixtures (tests/native/idle-links): the default one (selected host asked for 12..12, 32 tests) and the fast one
 (7..7, with the 15 ms idle floor and the selected-host failover, 9 tests). A fault is run against the fixture named in its
 third element, 'default' when it has none.
 """
@@ -26,8 +26,9 @@ args.output.mkdir(parents=True, exist_ok=False)
 if args.build_root is not None:
     args.build_root.mkdir(parents=True, exist_ok=False)
 source = (root / 'src/link_service.c').read_text()
-TESTS = {'default': 31, 'fast': 9}
+TESTS = {'default': 32, 'fast': 9}
 faults = {
+    'unmanaged-selection-in-diagnostics': ('(unsigned)selected.ble.profile_index < ZBLP_LINK_SLOTS', 'true'),
     'unbounded-worker-batch': ('matched, now, !scan->issued);', 'matched, now, true);'),
     'quota-reset-for-idle': ('scan.active_pass = false;', 'scan.active_pass = false; scan.issued = false;'),
     'deferred-continuation-lost': ('if (delay == UINT32_MAX)', 'if (delay == UINT32_MAX || delay == 0U)'),

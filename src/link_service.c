@@ -66,6 +66,13 @@ static void wake(void)
     k_spin_unlock(&policy_lock, key);
 }
 
+static uint8_t managed_selected_slot(struct zmk_endpoint_instance selected)
+{
+    return selected.transport == ZMK_TRANSPORT_BLE &&
+           (unsigned)selected.ble.profile_index < ZBLP_LINK_SLOTS
+        ? (uint8_t)selected.ble.profile_index : UINT8_MAX;
+}
+
 struct scan {
     struct zmk_endpoint_instance selected;
     uint8_t connected;
@@ -187,10 +194,7 @@ static void reconcile(struct k_work *work)
     const bool current = generation == wake_generation;
     if (current) {
         /* A new selection restarts the fixed demotion delay of every previous host. */
-        zblp_link_select(&policy,
-                        scan.selected.transport == ZMK_TRANSPORT_BLE ? scan.selected.ble.profile_index
-                                                                      : UINT8_MAX,
-                        k_uptime_get_32());
+        zblp_link_select(&policy, managed_selected_slot(scan.selected), k_uptime_get_32());
     }
     k_spin_unlock(&policy_lock, key);
     /* Queue the selected host before idle hosts. A newer endpoint/callback
@@ -225,8 +229,7 @@ static void reconcile(struct k_work *work)
                 (unsigned)sequence, (unsigned)work_us, (unsigned)scan.api_calls,
                 (unsigned)scan.api_us, (unsigned)scan.api_max_us,
                 (unsigned)(scan.invalid + !valid), (unsigned)pending_ms,
-                scan.selected.transport == ZMK_TRANSPORT_BLE ?
-                    (unsigned)scan.selected.ble.profile_index : (unsigned)UINT8_MAX,
+                (unsigned)managed_selected_slot(scan.selected),
                 (unsigned)scan.connected, (unsigned)stale);
     }
 #endif

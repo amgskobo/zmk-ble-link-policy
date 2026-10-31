@@ -65,7 +65,16 @@ def workspace_identity(workspace, core, pins=None):
         revision = head(path)
         if revision != project['revision']:
             raise ValueError('Wrong selected revision: ' + project['name'])
-        rows.append(dict(project, resolved_path=str(path), actual_revision=revision))
+        status = subprocess.check_output(
+            ['git', '--no-optional-locks', '-c', 'safe.directory=' + str(path),
+             '-C', str(path), 'status', '--porcelain=v1', '--untracked-files=all',
+             '--ignore-submodules=none'], env=ENV, text=True, stderr=subprocess.PIPE)
+        if status:
+            raise ValueError('Dependency source differs from selected commit: ' + project['name'])
+        if head(path) != revision:
+            raise ValueError('Dependency revision changed during validation: ' + project['name'])
+        rows.append(dict(project, resolved_path=str(path), actual_revision=revision,
+                         working_tree_clean=True))
     return rows
 
 

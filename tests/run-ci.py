@@ -38,6 +38,7 @@ def main():
     before = source_identity()
     (output / 'source-before.json').write_text(json.dumps(before, indent=2) + '\n', encoding='utf-8')
     facts = dict(suite=args.suite, core=args.core, mode='full', status='RUNNING')
+    dependencies_before = None
     try:
         try:
             facts['module_head'] = head(ROOT)
@@ -46,7 +47,8 @@ def main():
         facts['image'] = load_pins()['image']
         if args.workspace:
             args.workspace = args.workspace.resolve()
-            facts['dependencies'] = workspace_identity(args.workspace, args.core)
+            dependencies_before = workspace_identity(args.workspace, args.core)
+            facts['dependencies'] = dependencies_before
         env = dict(ENV, ZMK_TEST_MODE='full')
         if args.workspace:
             env.update(ZEPHYR_BASE=str(args.workspace / 'zephyr'),
@@ -63,6 +65,17 @@ def main():
         facts['source_unchanged'] = before == after
         if before != after:
             facts.update(status='FAIL', error='Owner source changed during the lane; retain both identities')
+        if dependencies_before is not None:
+            try:
+                dependencies_after = workspace_identity(args.workspace, args.core)
+                facts['dependencies_after'] = dependencies_after
+                facts['dependencies_unchanged'] = dependencies_before == dependencies_after
+                if not facts['dependencies_unchanged']:
+                    facts.update(status='FAIL', error='Selected dependencies changed during the lane')
+            except Exception as error:
+                facts.update(status='FAIL', dependencies_unchanged=False,
+                             error='Selected dependencies changed during the lane: ' +
+                                   type(error).__name__ + ': ' + str(error))
         (output / 'result.json').write_text(json.dumps(facts, indent=2) + '\n', encoding='utf-8')
     print(args.suite + ' ' + facts['status'])
     if facts['status'] != 'PASS':

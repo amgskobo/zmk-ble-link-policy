@@ -59,7 +59,10 @@ automatically become publication artifacts.
 
 The CI entry records the module head (or no Git history), all source hashes
 before/after, dependency identities, actual command exit and raw start/end
-times. Any source drift makes the lane fail. Existing per-case logs, ordered
+times. Dependencies must match their pinned commits with clean tracked files
+and no untracked source; ignored runtime caches remain allowed. The lane checks
+dependency revisions and cleanliness again after execution. Owner or dependency
+source drift makes the lane fail. Existing per-case logs, ordered
 timing and binaries remain in the lane output. The hosted workflow uploads
 those records and preparation failures even after a failed test, including
 hidden `.config` files. Hosted execution remains a separate result from local
@@ -92,11 +95,11 @@ The inherited pure suite uses an independent literal selected-slot/time oracle,
 invalid slots, independent host states, wrap, reset, request/observation gates,
 refusal, idle grace, fallback and quiescence. Host runs include sanitizers and
 optimization, three identical runs and all 59 compiled negative controls.
-The native fixture retains the original 27 default cases and adds four
-request-yield/reselection/info-race/clock cases (31 default total), plus 9 fast-interval cases, repeated three
+The native fixture retains the original 27 default cases and adds five
+request-yield/reselection/info-race/clock/selection-boundary cases (32 default total), plus 9 fast-interval cases, repeated three
 times per binary. Kernel queues/timers are real; Bluetooth and ZMK endpoints
-are recorded boundaries. The original 37 plus three request-quota/continuation
-faults (40 compiled coordinator faults total) must build and fail
+are recorded boundaries. The original 37 plus four request-quota/continuation/selection
+faults (41 compiled coordinator faults total) must build and fail
 runtime assertions. A compilation error never counts as a killed fault.
 
 Integration builds six configurations on each core: the policy enabled,
@@ -125,6 +128,13 @@ The independent parameter-notification regression fails under the compiled
 `unrelated-param-wake` control. That fault survived the initial fixture split;
 its raw passing mutant and the added assertion are preserved in task evidence.
 The timeout helper retains numeric/width/coverage/fault assertions here.
+
+The selection boundary maps unmanaged BLE profiles and non-BLE routes to slot
+255. The `unmanaged-selection-in-diagnostics` compiled control must fail the
+native assertion. Real synthetic Git fixtures in `test_dependency_identity.py`
+cover clean dependencies, staged/unstaged changes, deletions, untracked source,
+ignored runtime caches and source/revision drift during an otherwise successful
+lane. A dirty dependency must stop the command before it starts.
 
 The pure capacity case checks that deferral preserves the attempt budget,
 command gate, idle widening and grace. Real queued unrelated work must run
