@@ -20,7 +20,7 @@
   "migration": "tests/migration.json",
   "implementation_families": {
     "pure_policy": "tests/host/test_link_policy.c; original55 plus4 capacity controls (59 total)",
-    "kernel_lifecycle": "tests/native/idle-links; original27 plus5 default (32 total) +9 fast; original37 plus4 coordinator controls (41 total); unmanaged selected profiles normalize to slot255",
+    "kernel_lifecycle": "tests/native/idle-links; original27 plus5 default (32 total) +9 fast retained; preemptible variant repeats all32 and adds quiet-unlock endpoint admission (33). Original37 plus4 coordinator controls retained and quiet-self-cancel-loses-wake added (42 total); unmanaged selected profiles normalize to slot255",
     "module_isolation": "tests/test_ownership.py; actual stock/DYA linked builds in all six configurations documented in tests/README.md; peripheral gate and explicit unsupported request",
     "timeout_width": "tests/test_timeout_width.py: actual helper, full uint32 numeric oracle,32/64-bit ticks, optimization/coverage/ABI and named compiled faults",
     "work_observations": "tests/observations.py; tests/test_observations.py: schema/width, order/wrap/reset, invalid/unavailable, topology/stale cohorts, timing sum/max/call-count consistency, quota and peak provenance. Physical wall/HID/RF remain separate.",

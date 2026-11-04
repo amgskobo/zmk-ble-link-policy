@@ -129,7 +129,8 @@ arrivals before claiming an end-to-end improvement.
 
 Storage is a fixed five-slot policy table, one spinlock and one delayed work
 item. It retains no connection reference between scans, allocates no thread
-or heap and cancels its timer when reconciliation is complete. Retries use the
+or heap and leaves no timer when reconciliation is complete. A concurrent
+endpoint wake can queue the still-running work without a cancellation window. Retries use the
 existing system workqueue; numeric logs contain no addresses or payloads.
 Flash/RAM impact depends on the linked build and logging. Moving the same
 policy is not a measured speed or power improvement.
