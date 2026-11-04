@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 cmake_minimum_required(VERSION 3.20.0)
+if(ZBLP_IDLE_LINKS_PREEMPT)
+  list(APPEND EXTRA_CONF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/preempt.conf)
+endif()
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(zblp_idle_link_boundary)
 set(addon ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
@@ -10,7 +13,11 @@ if(NOT ZBLP_LINK_SOURCE)
 endif()
 # Default fixture: the selected host is asked for 12..12 (the production range). -DZBLP_IDLE_LINKS_FAST=ON builds the
 # fixture whose selected range is 7..7 (below the 15 ms Apple hosts accept) and runs fast.c instead of main.c.
-if(ZBLP_IDLE_LINKS_FAST)
+if(ZBLP_IDLE_LINKS_PREEMPT)
+  set(zbm_main preempt.c)
+  set(zbm_selected_interval 12)
+  target_compile_definitions(app PRIVATE ZBLP_PREEMPT_TEST=1)
+elseif(ZBLP_IDLE_LINKS_FAST)
   set(zbm_main fast.c)
   set(zbm_selected_interval 7)
 else()

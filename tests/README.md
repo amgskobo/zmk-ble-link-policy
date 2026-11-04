@@ -9,7 +9,7 @@ All executable assertions and fixtures below belong to this module.
 The GitHub workflow dispatches these same owner entries in a digest-pinned SDK
 image. It runs four complete lanes: host, native on the common pinned Zephyr,
 and firmware on unchanged stock ZMK and DYA. Native executes every fault and
-both default/fast fixtures; it is not a reduced selection. There is no private
+all default/fast/preemptible fixtures; it is not a reduced selection. There is no private
 cache, sibling checkout, automatic scheduled fetch or integration-owner probe.
 The image supplies Python/PyYAML, west, CMake, GNU C, multilib/gcov and the
 Zephyr SDK. Direct commands on another host require equivalent tools; they
@@ -63,9 +63,11 @@ times. Dependencies must match their pinned commits with clean tracked files
 and no untracked source; ignored runtime caches remain allowed. The lane checks
 dependency revisions and cleanliness again after execution. Owner or dependency
 source drift makes the lane fail. Existing per-case logs, ordered
-timing and binaries remain in the lane output. The hosted workflow uploads
-those records and preparation failures even after a failed test, including
-hidden `.config` files. Hosted execution remains a separate result from local
+timing and binaries remain in the lane output. Outside the review branch, the
+hosted workflow uploads those records and preparation failures even after a
+failed test, including hidden `.config` files. On `codex/ble-link-policy-review`,
+raw evidence uploads are disabled; review local evidence before sharing selected
+records. Hosted execution remains a separate result from local
 execution of the same commands. No command here flashes or modifies settings.
 
 ## Direct owner entries
@@ -99,7 +101,11 @@ The native fixture retains the original 27 default cases and adds five
 request-yield/reselection/info-race/clock/selection-boundary cases (32 default total), plus 9 fast-interval cases, repeated three
 times per binary. Kernel queues/timers are real; Bluetooth and ZMK endpoints
 are recorded boundaries. The original 37 plus four request-quota/continuation/selection
-faults (41 compiled coordinator faults total) must build and fail
+faults are retained. A third binary preserves all32 default cases under a
+preemptible system workqueue and adds a real priority5 endpoint producer after
+the quiet worker releases its lock (33 cases). It must admit that wake without
+an external replay; the original self-cancel implementation is the added
+`quiet-self-cancel-loses-wake` control (42 compiled coordinator faults total). All controls must build and fail
 runtime assertions. A compilation error never counts as a killed fault.
 
 Integration builds six configurations on each core: the policy enabled,

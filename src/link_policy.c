@@ -205,10 +205,9 @@ void zblp_link_observed(struct zblp_link_policy *p, uint8_t slot, bool fast, boo
         s->observed_idle = idle;
         if (s->preference_valid) {
             const bool confirmed = s->preference_fast ? fast : idle;
-            /* Measured on hardware: Windows repeated its idle link within a millisecond to three seconds
-             * of a selected request and applied nothing until the retry 20 s later. The idle values after
-             * a selected request mean the peer answered without applying it: the settlement ends and the
-             * request may be repeated once its command gate (and attempt budget) allows. */
+            /* Idle values after a selected request are an answer without the
+             * requested promotion. End settlement so a retry can proceed when
+             * its command gate and attempt budget allow. */
             const bool answered = !confirmed && s->preference_fast && idle;
             if (confirmed || answered) {
                 s->preference_valid = false;

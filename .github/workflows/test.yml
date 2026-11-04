@@ -50,7 +50,7 @@ jobs:
             python3 tests/run-ci.py --suite "$SUITE" --core "$CORE" --workspace "$WORKSPACE" --output "$OUTPUT"
           fi
       - name: Preserve ordered results, identities and build artifacts
-        if: always()
+        if: ${{ (always()) && github.ref != 'refs/heads/codex/ble-link-policy-review' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ble-link-policy-${{ matrix.suite }}-${{ matrix.core }}-${{ github.run_attempt }}

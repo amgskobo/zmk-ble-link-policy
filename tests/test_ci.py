@@ -96,7 +96,10 @@ class CI(unittest.TestCase):
         self.assertEqual(lanes, {('host', 'upstream'), ('native', 'upstream'),
                                  ('integration', 'upstream'), ('integration', 'dya')})
         artifact = next(step for step in job['steps'] if step.get('uses', '').startswith('actions/upload-artifact@'))
-        self.assertEqual(artifact['if'], 'always()')
+        self.assertEqual(
+            artifact['if'],
+            "${{ (always()) && github.ref != 'refs/heads/codex/ble-link-policy-review' }}",
+        )
         self.assertEqual(artifact['with']['include-hidden-files'], 'true')
         self.assertIn('preparation', artifact['with']['path'])
 
