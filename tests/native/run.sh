@@ -10,12 +10,14 @@ set -euo pipefail
 [ ! -e "$ZBLP_NATIVE_BUILD_DIR-fast" ] || { echo 'Output already exists'; exit 2; }
 [ ! -e "$ZBLP_NATIVE_BUILD_DIR-preempt" ] || { echo 'Output already exists'; exit 2; }
 root="$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)"
-build() {  # $1 build directory, then extra CMake arguments
-  local dir="$1"; shift
+build() {  # build directory, required cases, then extra CMake arguments
+  local dir="$1" total="$2"; shift 2
   west build -p=always -s "$root/tests/native/idle-links" -d "$dir" \
     -b native_sim/native/64 -- -DWEST=OFF -DZEPHYR_BASE="$ZEPHYR_BASE" "${ZBLP_NATIVE_CMAKE_ARG:--DZEPHYR_MODULES=}" "$@"
-  for run in 1 2 3; do timeout 30 "$dir/zephyr/zephyr.exe" -no-rt; done
+  for run in 1 2 3; do
+    python3 "$root/tests/native_output.py" "$dir/zephyr/zephyr.exe" --cases "$total"
+  done
 }
-build "$ZBLP_NATIVE_BUILD_DIR"
-build "$ZBLP_NATIVE_BUILD_DIR-fast" -DZBLP_IDLE_LINKS_FAST=ON
-build "$ZBLP_NATIVE_BUILD_DIR-preempt" -DZBLP_IDLE_LINKS_PREEMPT=ON
+build "$ZBLP_NATIVE_BUILD_DIR" 32
+build "$ZBLP_NATIVE_BUILD_DIR-fast" 9 -DZBLP_IDLE_LINKS_FAST=ON
+build "$ZBLP_NATIVE_BUILD_DIR-preempt" 33 -DZBLP_IDLE_LINKS_PREEMPT=ON

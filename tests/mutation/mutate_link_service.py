@@ -16,6 +16,10 @@ import re
 import subprocess
 import time
 import hashlib
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from native_output import check_run
 
 
 def replace_fault_site(source, before, after, name):
@@ -308,16 +312,7 @@ for name, change, variant in plan:
         )
         output = run.stdout
         (out / ("run-" + str(i) + ".log")).write_text(output)
-        if change:
-            assert run.returncode != 0 and "Assertion failed" in output, name
-        else:
-            assert run.returncode == 0 and "PROJECT EXECUTION SUCCESSFUL" in output, (
-                name
-            )
-            total = TESTS[variant]
-            assert (
-                "pass = %d, fail = 0, skip = 0, total = %d" % (total, total) in output
-            ), name
+        check_run(output, run.returncode, TESTS[variant], expect_assertion=bool(change))
         runs.append(run.returncode)
     results.append(
         dict(

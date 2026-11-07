@@ -108,6 +108,47 @@ an external replay; the original self-cancel implementation is the added
 `quiet-self-cancel-loses-wake` control (42 compiled coordinator faults total). All controls must build and fail
 runtime assertions. A compilation error never counts as a killed fault.
 
+Both native launchers use `native_output.py` to reject actual ASan/LSan reports,
+Clang UBSan reports and GCC's source-located `runtime error:` diagnostics before
+checking exits, success markers and complete case counts. A recovering sanitizer
+can otherwise print a diagnostic, complete every case and exit zero. A diagnostic
+also cannot qualify a coordinator fault that must fail its runtime assertion.
+Locationless `runtime error:` test labels remain ordinary output.
+The host lane runs `test_native_output.py` to preserve these admission rules.
+
+The two named sanitizer-admission controls are separate from the42 coordinator
+faults. They retain the real policy and all native cases, adding only an explicit
+startup fault through the existing `ZBLP_LINK_SOURCE` test input. For example,
+inside the prepared container, build the ASan control in a fresh directory:
+
+```sh
+ZEPHYR_BASE=RESOLVED/zephyr ZEPHYR_TOOLCHAIN_VARIANT=host \
+  west build -p=always -s tests/native/idle-links -d NEW_ASAN_BUILD \
+  -b native_sim/native/64 -- -DWEST=OFF -DZEPHYR_BASE=RESOLVED/zephyr \
+  -DZEPHYR_MODULES=RESOLVED/modules/hal/cmsis \
+  -DZBLP_LINK_SOURCE="$PWD/tests/native/sanitizer_control.c" \
+  -DCONFIG_ASAN=y -DCONFIG_ASAN_RECOVER=y \
+  -DEXTRA_CFLAGS=-DZBLP_ASAN_ADMISSION_CONTROL=1
+python3 tests/native/check_admission.py \
+  --binary NEW_ASAN_BUILD/zephyr/zephyr.exe --cases 32 --kind asan \
+  --output NEW_ASAN_CONTROL_OUTPUT
+```
+
+For the UBSan control use another fresh build/output, replace the three ASan
+settings with `-DCONFIG_UBSAN=y` and
+`-DEXTRA_CFLAGS=-DZBLP_UBSAN_ADMISSION_CONTROL=1`, then select `--kind ubsan`.
+The checker sets the recovering runtime options explicitly. Each control must
+emit its real diagnostic, exit zero and complete all32 cases; the original
+exit/marker/count predicate must accept it and fixed admission must reject it
+specifically for that diagnostic in three fresh runs of the same ELF.
+These are expected rejections, not clean product results. Retain actual compiler
+arguments, effective config, dependency headers/objects and ELF identity before
+running. This recovering-control build does not establish strict sanitizer or
+optimization coverage; those require separately selected flags, including
+`CONFIG_ASAN_RECOVER=n` and a final `-fno-sanitize-recover=all` for a strict build.
+Zephyr and the separately compiled NSI runner need their own actual-argument
+checks; NSI defaults to `-O0` even when Zephyr uses another optimization level.
+
 Integration builds six configurations on each core: the policy enabled,
 diagnostics enabled, the policy enabled with additional core features, the policy
 disabled, a normal peripheral and a peripheral that requests the unsupported
