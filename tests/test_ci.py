@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """CI selection, immutable workspaces and failure/provenance regression guards."""
+import contextlib
 import copy
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -19,6 +21,33 @@ spec.loader.exec_module(runner)
 
 
 class CI(unittest.TestCase):
+    def test_split_dispatch_requires_and_selects_both_cores(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'fresh'
+            with patch.object(sys, 'argv', ['run-ci.py', '--suite', 'split', '--workspace', '/stock',
+                                           '--output', str(output)]), self.assertRaises(SystemExit):
+                runner.main()
+            self.assertFalse(output.exists())
+            command = runner.lane_command('split', Path('/stock'), output, None, Path('/dya'))
+            self.assertEqual(command[1], 'tests/native/run-split.py')
+            self.assertEqual(command[command.index('--workspace') + 1], '/stock')
+            self.assertEqual(command[command.index('--dya-workspace') + 1], '/dya')
+
+    def test_dya_dependency_drift_rejects_a_successful_split_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'fresh'
+            with patch.object(sys, 'argv', ['run-ci.py', '--suite', 'split', '--workspace', '/stock',
+                                           '--dya-workspace', '/dya', '--output', str(output)]), \
+                    patch.object(runner, 'source_identity', return_value={'src/a.c': 'same'}), \
+                    patch.object(runner, 'head', return_value='1' * 40), \
+                    patch.object(runner, 'workspace_identity', side_effect=[['stock'], ['dya-before'], ['stock'], ['dya-after']]), \
+                    patch.object(runner, 'execute', return_value={}):
+                with self.assertRaises(SystemExit):
+                    runner.main()
+            result = json.loads((output / 'result.json').read_text())
+            self.assertEqual(result['status'], 'FAIL')
+            self.assertIn('DYA source changed', result['error'])
+
     def test_fixed_graph_rejects_floating_credentials_and_aliased_paths(self):
         pins = load_pins()
         mutations = [
@@ -93,7 +122,7 @@ class CI(unittest.TestCase):
         self.assertEqual(data['permissions'], {'contents': 'read'})
         self.assertEqual(job['container']['image'], load_pins()['image'])
         lanes = {(row['suite'], row['core']) for row in job['strategy']['matrix']['include']}
-        self.assertEqual(lanes, {('host', 'upstream'), ('native', 'upstream'),
+        self.assertEqual(lanes, {('host', 'upstream'), ('native', 'upstream'), ('split', 'upstream'),
                                  ('integration', 'upstream'), ('integration', 'dya')})
         artifact = next(step for step in job['steps'] if step.get('uses', '').startswith('actions/upload-artifact@'))
         self.assertEqual(
@@ -140,3 +169,85 @@ class CI(unittest.TestCase):
             arguments = record.read_text().splitlines()
             self.assertEqual(arguments[arguments.index('--output') + 1],
                              str(visible / 'zblp-workspace'))
+
+
+class SplitWorkerBudget(unittest.TestCase):
+    """Observe the actual CLI's first build environment without running a build."""
+
+    @staticmethod
+    def invoke(environment_jobs=None, explicit_jobs=None):
+        spec = importlib.util.spec_from_file_location(
+            'policy_split_budget_runner', ROOT / 'tests/native/run-split.py')
+        split = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(split)
+        environment = dict(os.environ)
+        environment.pop('CMAKE_BUILD_PARALLEL_LEVEL', None)
+        if environment_jobs is not None:
+            environment['CMAKE_BUILD_PARALLEL_LEVEL'] = environment_jobs
+        calls = []
+        stderr = io.StringIO()
+
+        def stop_at_build(command, **kwargs):
+            calls.append((command, kwargs['env']['CMAKE_BUILD_PARALLEL_LEVEL']))
+            return subprocess.CompletedProcess(command, 42, 'CONTROLLED_BUILD_BOUNDARY')
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'fresh'
+            argv = ['run-split.py', '--workspace', '/stock', '--dya-workspace', '/dya',
+                    '--output', str(output)]
+            if explicit_jobs is not None:
+                argv += ['--jobs', explicit_jobs]
+            error = None
+            with patch.dict(os.environ, environment, clear=True), \
+                    patch.object(sys, 'argv', argv), \
+                    patch.object(split, 'workspace_identity', return_value=[]) as dependencies, \
+                    patch.object(split, 'source_identity', return_value={'source': 'unchanged'}), \
+                    patch.object(split.subprocess, 'run', side_effect=stop_at_build), \
+                    contextlib.redirect_stderr(stderr):
+                try:
+                    split.main()
+                except (SystemExit, RuntimeError) as caught:
+                    error = caught
+            return dict(calls=calls, error=error, stderr=stderr.getvalue(),
+                        dependency_calls=dependencies.call_count,
+                        output_created=output.exists())
+
+    def assert_build_jobs(self, result, expected):
+        self.assertEqual(len(result['calls']), 1)
+        command, jobs = result['calls'][0]
+        self.assertEqual(command[:2], ['west', 'build'])
+        self.assertEqual(jobs, expected)
+        self.assertIsInstance(result['error'], RuntimeError)
+        self.assertIn('Build failed; not a runtime fault result', str(result['error']))
+
+    def assert_invalid_jobs(self, result):
+        self.assertIsInstance(result['error'], SystemExit)
+        self.assertEqual(result['error'].code, 2)
+        self.assertRegex(result['stderr'], r'invalid int value|positive job count|positive integer')
+        self.assertEqual(result['dependency_calls'], 0)
+        self.assertEqual(result['calls'], [])
+        self.assertFalse(result['output_created'])
+
+    def test_default_worker_count_is_two_without_environment(self):
+        self.assert_build_jobs(self.invoke(), '2')
+
+    def test_environment_budget_reaches_the_actual_build(self):
+        for value in ('1', '3'):
+            with self.subTest(value=value):
+                self.assert_build_jobs(self.invoke(environment_jobs=value), value)
+
+    def test_explicit_cli_wins_even_when_environment_is_invalid(self):
+        for environment_jobs, explicit_jobs in (('1', '2'), ('3', '1'), ('0', '1'),
+                                                ('invalid', '1'), ('', '1')):
+            with self.subTest(environment=environment_jobs, cli=explicit_jobs):
+                self.assert_build_jobs(self.invoke(environment_jobs, explicit_jobs), explicit_jobs)
+
+    def test_invalid_environment_is_rejected_before_dependencies_or_build(self):
+        for value in ('0', '-1', 'invalid', '1.5', ''):
+            with self.subTest(value=value):
+                self.assert_invalid_jobs(self.invoke(environment_jobs=value))
+
+    def test_invalid_cli_cannot_fall_back_to_valid_environment(self):
+        for value in ('0', '-1', 'invalid', '1.5', ''):
+            with self.subTest(value=value):
+                self.assert_invalid_jobs(self.invoke(environment_jobs='2', explicit_jobs=value))

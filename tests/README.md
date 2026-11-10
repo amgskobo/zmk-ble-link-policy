@@ -7,8 +7,8 @@ All executable assertions and fixtures below belong to this module.
 ## Reproducing CI
 
 The GitHub workflow dispatches these same owner entries in a digest-pinned SDK
-image. It runs four complete lanes: host, native on the common pinned Zephyr,
-and firmware on unchanged stock ZMK and DYA. Native executes every fault and
+image. It runs five complete lanes: host, host-policy native on the common pinned Zephyr,
+split-policy native with both actual activity cores, and firmware on unchanged stock ZMK and DYA. Native executes every fault and
 all default/fast/preemptible fixtures; it is not a reduced selection. There is no private
 cache, sibling checkout, automatic scheduled fetch or integration-owner probe.
 The image supplies Python/PyYAML, west, CMake, GNU C, multilib/gcov and the
@@ -39,6 +39,7 @@ Inside that container:
 ```sh
 python3 tests/run-ci.py --suite host --output /work/results/host
 python3 tests/run-ci.py --suite native --workspace /work/upstream --output /work/results/native
+python3 tests/run-ci.py --suite split --workspace /work/upstream --dya-workspace /work/dya --output /work/results/split
 python3 tests/run-ci.py --suite integration --core upstream --workspace /work/upstream --output /work/results/upstream
 python3 tests/run-ci.py --suite integration --core dya --workspace /work/dya --output /work/results/dya
 ```
@@ -86,7 +87,7 @@ python3 tests/run-integration.py --workspace RESOLVED_WORKSPACE \
 Run the integration entry once for unchanged stock ZMK and once for unchanged
 DYA, with explicit selected module roots from west list. The pinned cores are
 stock `5b51501fead672c41b5cfb396f3dafe0894bf4e9` and DYA
-`e5c9b6915b56801193e359dd9bad4a167ce0d1b8`, with Zephyr
+`9f75b536cff5a63d34cba43de9be8652b8bd1915`, with Zephyr
 `10ba6d0cb38bc3d258775d27982f707599320085`. Existing outputs fail.
 Both native mutation and integration entries accept `--build-root` for a fresh
 Linux filesystem build directory while keeping records/raw logs in `--output`.
@@ -149,7 +150,7 @@ optimization coverage; those require separately selected flags, including
 Zephyr and the separately compiled NSI runner need their own actual-argument
 checks; NSI defaults to `-O0` even when Zephyr uses another optimization level.
 
-Integration builds six configurations on each core: the policy enabled,
+Integration retains the original six configurations on each core: the policy enabled,
 diagnostics enabled, the policy enabled with additional core features, the policy
 disabled, a normal peripheral and a peripheral that requests the unsupported
 option. The latter must emit the specific dependency warning and still build
@@ -219,3 +220,49 @@ Timing resolution follows the selected cycle clock; for example, a32768 Hz
 clock has about30.52 us resolution. Zero can mean below that resolution. Use bounded
 captures: spans of half a 32-bit cycle period or more are unsupported, and
 multiple full wraps cannot be inferred from a 32-bit counter alone.
+
+## Split policy owner matrix
+
+`python3 tests/run-ci.py --suite split --workspace RESOLVED_STOCK --dya-workspace RESOLVED_DYA --output FRESH_OUTPUT`
+is the complete split kernel lane. The required workspaces use `ci/pins.json`;
+preparation is separate and output paths must be fresh. This lane builds22
+normal and23 preemptible cases once, plus9 actual-activity cases once for each
+unchanged core. Each binary executes three times with ASan/UBSan (189 required
+case completions, no required skips). It reuses the existing native sanitizer
+admission checker. No keyboard checkout or private sibling tests are required.
+
+The split runner uses `CMAKE_BUILD_PARALLEL_LEVEL` when `--jobs` is omitted;
+without that environment value it keeps its default of 2. Explicit `--jobs`
+takes precedence, including when the unused environment value is invalid.
+The selected value must be a positive integer and is exported to the actual
+build. `test_ci.SplitWorkerBudget` checks the minimum/normal values, default,
+CLI precedence and invalid-value refusal before dependency or build work.
+
+The migrated assertions cover ACTIVE/IDLE/SLEEP, request/settlement bounds,
+latest intent/connection epochs, wrap, five-host exclusion, invalid/ambiguous
+peers and balanced references. Real activity cases compile each selected core's
+unchanged activity/event manager/event implementations, linker subscriptions
+and Zephyr input thread. Local/received keys and local/proxy pointing inputs,
+settled/recent idle, pending idle completion, alternating sources, three
+idle/active cycles and a refused first restoration are retained. DYA's public
+timeout setter remains exercised on DYA; stock uses its configured timeout.
+
+The first ACTIVE request's controlled central receive-to-API bound is10ms;
+NSI uses its virtual1ms clock with `-no-rt`. This is not wall/CPU, radio, complete
+negotiation or host HID timing. Runtime Bluetooth behavior is a recorded boundary.
+
+All five original fault kinds remain: idle-stays-fast, extra-retry,
+host-role-selected, quiet-wake-cancelled and active-gated. The last runs for
+both activity cores (six compiled controls), each identical binary three times.
+`split_output.py` requires the specified assertion in its designated failing
+test block and completed failed suite; unrelated failure, compiler error,
+missing completion or recovering sanitizer diagnostics never kill a fault.
+`test_split_output.py` uses explicitly synthetic admission controls.
+
+Each firmware core also builds split-only, host-and-split and split-disabled
+central configurations and explicit peripheral/multiple-peer rejection, making
+eleven configurations per core. They verify actual Kconfig, compiler paths and
+callback symbols independently of the host-policy source/symbol checks.
+Keyboard owners retain their own chosen values, wiring, normal/reset role
+admission and physical integration gates. The source/assertion replacement
+map and external original evidence identity are in `migration.json`.

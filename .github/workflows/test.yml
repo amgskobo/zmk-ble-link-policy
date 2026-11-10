@@ -26,6 +26,7 @@ jobs:
         include:
           - {suite: host, core: upstream}
           - {suite: native, core: upstream}
+          - {suite: split, core: upstream}
           - {suite: integration, core: upstream}
           - {suite: integration, core: dya}
     steps:
@@ -37,15 +38,23 @@ jobs:
         run: >-
           python3 tests/prepare-workspace.py --core ${{ matrix.core }}
           --output "$RUNNER_TEMP/zblp-workspace" --allow-network
+      - name: Prepare the second immutable activity core
+        if: matrix.suite == 'split'
+        run: >-
+          python3 tests/prepare-workspace.py --core dya
+          --output "$RUNNER_TEMP/zblp-dya-workspace" --allow-network
       - name: Run the complete owner lane
         env:
           SUITE: ${{ matrix.suite }}
           CORE: ${{ matrix.core }}
           WORKSPACE: ${{ runner.temp }}/zblp-workspace
           OUTPUT: ${{ runner.temp }}/zblp-results
+          DYA_WORKSPACE: ${{ runner.temp }}/zblp-dya-workspace
         run: |
           if [ "$SUITE" = host ]; then
             python3 tests/run-ci.py --suite host --output "$OUTPUT"
+          elif [ "$SUITE" = split ]; then
+            python3 tests/run-ci.py --suite split --workspace "$WORKSPACE" --dya-workspace "$DYA_WORKSPACE" --output "$OUTPUT"
           else
             python3 tests/run-ci.py --suite "$SUITE" --core "$CORE" --workspace "$WORKSPACE" --output "$OUTPUT"
           fi
@@ -62,3 +71,6 @@ jobs:
             ${{ runner.temp }}/zblp-workspace/preparation
             ${{ runner.temp }}/zblp-workspace/manifest
             ${{ runner.temp }}/zblp-workspace/workspace.json
+            ${{ runner.temp }}/zblp-dya-workspace/preparation
+            ${{ runner.temp }}/zblp-dya-workspace/manifest
+            ${{ runner.temp }}/zblp-dya-workspace/workspace.json

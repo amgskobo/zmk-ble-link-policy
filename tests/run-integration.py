@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 import time
 from ci_support import load_pins, workspace_identity
-from integration_checks import rejected_peripheral_warning
+from integration_checks import rejected_peripheral_warning, rejected_split_warning
 
 root = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser(description=__doc__)
@@ -90,7 +90,7 @@ modules.append(str(root))
 core_revision = next(x["revision"] for x in identities if x["name"] == "zmk")
 assert core_revision in (
     "5b51501fead672c41b5cfb396f3dafe0894bf4e9",
-    "e5c9b6915b56801193e359dd9bad4a167ce0d1b8",
+    "9f75b536cff5a63d34cba43de9be8652b8bd1915",
 ), core_revision
 pins = load_pins()
 core = next(
@@ -109,12 +109,19 @@ for mode in (
     "disabled",
     "peripheral",
     "reject-peripheral",
+    "split-only",
+    "host-and-split",
+    "split-disabled",
+    "reject-split-peripheral",
+    "reject-split-multi",
 ):
     out = a.output / mode
     out.mkdir()
     build = (a.build_root / mode) if a.build_root is not None else out / "build"
-    enabled = mode in ("enabled", "diagnostics", "studio")
+    enabled = mode in ("enabled", "diagnostics", "studio", "host-and-split", "split-disabled")
     requested = enabled or mode == "reject-peripheral"
+    split_enabled = mode in ("split-only", "host-and-split")
+    split_requested = split_enabled or mode in ("reject-split-peripheral", "reject-split-multi")
     conf = out / "fixture.conf"
     text = (
         "CONFIG_ZMK_BLE=y\nCONFIG_SETTINGS=y\nCONFIG_ZMK_STUDIO="
@@ -123,10 +130,15 @@ for mode in (
         + ("y" if requested else "n")
         + "\n"
     )
+    text += "CONFIG_ZMK_BLE_SPLIT_POLICY=" + ("y" if split_requested else "n") + "\n"
     if mode == "diagnostics":
         text += "CONFIG_LOG=y\nCONFIG_ZMK_BLE_LINK_POLICY_DIAGNOSTICS=y\n"
-    if mode in ("peripheral", "reject-peripheral"):
+    if mode in ("peripheral", "reject-peripheral", "reject-split-peripheral"):
         text += "CONFIG_ZMK_SPLIT=y\nCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n\n"
+    elif mode in ("split-only", "host-and-split", "split-disabled", "reject-split-multi"):
+        text += "CONFIG_ZMK_SPLIT=y\nCONFIG_ZMK_SPLIT_ROLE_CENTRAL=y\n"
+    if mode == "reject-split-multi":
+        text += "CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS=2\n"
     conf.write_text(text)
     command = [
         "west",
@@ -157,6 +169,10 @@ for mode in (
     if mode == "reject-peripheral":
         log = (out / "build.log").read_text()
         assert rejected_peripheral_warning(log), mode
+    if mode in ("reject-split-peripheral", "reject-split-multi"):
+        dependency = ("ZMK_SPLIT_ROLE_CENTRAL" if mode == "reject-split-peripheral"
+                      else "ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS")
+        assert rejected_split_warning((out / "build.log").read_text(), dependency), mode
     # A rejected requested value is a warning on these cores; prove the actual
     # built config, objects and symbols remain disabled as well.
     assert built.returncode == 0, mode
@@ -169,12 +185,19 @@ for mode in (
         assert ("CONFIG_ZMK_STUDIO=y" in config.splitlines()) == (mode == "studio"), (
             mode
         )
+        assert ("CONFIG_ZMK_BLE_SPLIT_POLICY=y" in config.splitlines()) == split_enabled, mode
+        if split_enabled:
+            assert "CONFIG_ZMK_BLE_SPLIT_POLICY_IDLE_INTERVAL=24" in config.splitlines(), mode
+            for value in ["CONFIG_ZMK_SPLIT_BLE_PREF_INT=6", "CONFIG_ZMK_SPLIT_BLE_PREF_LATENCY=30",
+                          "CONFIG_ZMK_SPLIT_BLE_PREF_TIMEOUT=400"]:
+                assert value in config.splitlines(), (mode, value)
         assert "CONFIG_ZMK_BLE_MESSENGER=y" not in config, mode
         compiled = {
             x["file"] for x in json.loads((build / "compile_commands.json").read_text())
         }
         for name in ("link_service.c", "link_policy.c"):
             assert (str(root / "src" / name) in compiled) == enabled, (mode, name)
+        assert (str(root / "src/split_service.c") in compiled) == split_enabled, mode
         elf = build / "zephyr/zmk.elf"
         cache = (build / "CMakeCache.txt").read_text()
         compiler = next(
@@ -186,6 +209,7 @@ for mode in (
         nm = subprocess.check_output([nm_tool, str(elf)], text=True)
         (out / "symbols.txt").write_text(nm)
         assert ("zblp_link_next" in nm) == enabled, mode
+        assert ("bt_conn_cb_zblp_split_callbacks" in nm) == split_enabled, mode
         row["hashes"] = {
             str(f): hashlib.sha256(f.read_bytes()).hexdigest()
             for f in [elf, build / "zephyr/.config", build / "zephyr/zephyr.dts"]

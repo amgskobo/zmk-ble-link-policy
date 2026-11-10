@@ -7,6 +7,8 @@ connected with peripheral latency 30. This module uses public ZMK
 endpoint/profile and Zephyr connection APIs; no core edits, wrappers, heap,
 persistent settings or idle periodic work.
 Both unchanged stock ZMK and DYA are supported.
+An independent optional policy adapts one outgoing split link to ZMK activity.
+Host and split connections have separate role filters, state and retry budgets.
 
 ## Installation
 
@@ -59,19 +61,22 @@ The integration matrix selects these unchanged commits:
 | Core | Selected test revision |
 | --- | --- |
 | Stock ZMK | `5b51501fead672c41b5cfb396f3dafe0894bf4e9` |
-| DYA | `e5c9b6915b56801193e359dd9bad4a167ce0d1b8` |
+| DYA | `9f75b536cff5a63d34cba43de9be8652b8bd1915` |
 | Shared Zephyr | `10ba6d0cb38bc3d258775d27982f707599320085` |
 
 [The complete test pins](tests/ci/pins.json) also fix the supporting libraries,
 core build dependencies and SDK image digest.
 Other core revisions need their own integration results. The module does not
 depend on a sibling checkout, AKKB46 configuration or a private build cache.
+Network preparation requires every selected commit to be retrievable by a fresh
+runner. An exact clean local checkout can supply offline preparation; that does
+not establish remote availability or hosted CI.
 See [reproducing CI](tests/README.md#reproducing-ci),
 [the test contract](tests/maintenance.json) and
 [validation and hardware acceptance](docs/validation.md). A hosted CI badge is not
 provided before an actual hosted run.
 
-## Behavior and ownership
+## Host behavior and ownership
 
 The actual selected HID endpoint determines active mode. USB or no endpoint
 means no active BLE HID host. Only connected known host profiles on the default
@@ -161,3 +166,69 @@ See [tests/README.md](tests/README.md).
 ## License
 
 GPL-3.0-only; see [LICENSE](LICENSE).
+
+## Optional split activity policy
+
+The split policy is separate from the selected-host policy. Enable it only on
+an outgoing split central with exactly one configured peer; the peripheral and
+settings-reset images keep it disabled. It works independently of
+`ZMK_BLE_LINK_POLICY`, Studio and Messenger. Keyboard configuration owns the
+role and numeric preferences; this module owns reconciliation and direct tests.
+
+```conf
+CONFIG_ZMK_BLE_SPLIT_POLICY=y
+CONFIG_ZMK_BLE_SPLIT_POLICY_IDLE_INTERVAL=24
+# Existing ZMK split preferences remain the ACTIVE target, for example:
+# CONFIG_ZMK_SPLIT_BLE_PREF_INT=6
+# CONFIG_ZMK_SPLIT_BLE_PREF_LATENCY=30
+# CONFIG_ZMK_SPLIT_BLE_PREF_TIMEOUT=400
+```
+
+Intervals use 1.25 ms units: 6 is 7.5 ms and 24 is 30 ms. A latency of 30 is an
+event-skip count, not milliseconds. Timeout uses 10 ms units: 400 is 4 s. The
+supported idle range is 7..48 and must exceed the active preference. Compilation
+checks the supervision bound `timeout*8 > 2*idle_interval*(latency+1)`. No host/profile
+preference, advertising, bonds, PHY, payload size or persistent setting changes.
+
+ZMK ACTIVE uses the normal split preference; IDLE uses the configured longer
+interval; SLEEP issues no more requests. Stored activity timeouts remain with
+ZMK/the selected settings owner. The first necessary ACTIVE restoration gets
+one immediate attempt past this module's 500 ms request-spacing gate. That gate
+is an owner policy, not a core-imposed BLE delay. Idle requests and later
+refused attempts retain the spacing. An already accepted procedure is not
+cancelled: after its API call returns, the policy waits for matching observed
+parameters or up to 5 s before reconsidering the newest activity intent. The
+first ACTIVE exception does not bypass that accepted-procedure wait, and 5 s
+does not bound the controller's actual application time. There are at most
+three consecutive attempts without observed convergence; mode or
+connection changes and convergence reset the budget. Matching applied values
+or exhausted attempts leave no periodic idle work. API success is not proof
+of applied parameters; a synchronous stack call can block independently of
+these request-count and timer bounds.
+
+Only connected LE central-role links on the default identity qualify. The
+single-peer configuration is required, and multiple actual eligible links
+fail closed. Host peripheral-role connections are excluded even when five
+hosts coexist. The policies never share selection, generations or attempts.
+Temporary connection references are released before the next worker pass.
+
+No new thread, heap or persistence is added. One policy record, one delayable
+work item and lock/generation/index are fixed storage. The selected 32-bit ARM
+configuration uses 97 writable symbol bytes before alignment (40+48+8+1);
+callbacks, logging metadata and code also use flash. Inspect the final linked
+map for the actual configuration and runtime stack boundaries. Log level is
+shared with `ZMK_BLE_LINK_POLICY_LOG_LEVEL`; split observations are numeric.
+
+Build and install paired normal images through the integrating keyboard's
+procedure. A settings/bond erase is not required. Remeasure actual parameters,
+first input from both halves, host HID arrivals, reconnect, USB changes, LED
+synchronization and current with matching installed hashes/boot identities.
+The first split input travels on the currently negotiated link before any
+restoration can be requested. Native 10 ms input-to-request assertions use a
+controlled Bluetooth API at the central receive boundary; they do not bound
+on-air negotiation, input travel to the central or host HID delivery.
+
+The source/state fixtures migrated from `zmk-config-akkb46` retain their MIT
+SPDX notices and original assertions. See `tests/migration.json`. Direct tests
+and mutations now belong here; keyboards retain configuration/source/linkage
+admission and physical composition checks.

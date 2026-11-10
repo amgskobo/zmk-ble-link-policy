@@ -2,3 +2,6 @@
 if(CONFIG_ZMK_BLE_LINK_POLICY)
   target_sources(app PRIVATE src/link_service.c src/link_policy.c)
 endif()
+if(CONFIG_ZMK_BLE_SPLIT_POLICY)
+  target_sources(app PRIVATE src/split_service.c)
+endif()

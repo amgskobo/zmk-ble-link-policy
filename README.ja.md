@@ -5,6 +5,8 @@
 選択中の BLE HID ホストを優先し、ほかの既知ホストとの接続には peripheral
 latency 30 を要求するモジュールです。stock ZMK と DYA の公開 endpoint・profile API、
 および Zephyr の接続 API を使い、コアの修正や関数の置き換えを行いません。
+任意の独立した方針として、単一の送信側splitリンクをZMK activityに応じて調整できます。
+ホストとsplitの役割判定、状態、再試行上限は独立しています。
 
 ## 導入
 
@@ -55,12 +57,15 @@ timeout の単位は 10 ms（400 は 4 秒）です。この例は既存の接�
 | コア | 検証対象のリビジョン |
 | --- | --- |
 | Stock ZMK | `5b51501fead672c41b5cfb396f3dafe0894bf4e9` |
-| DYA | `e5c9b6915b56801193e359dd9bad4a167ce0d1b8` |
+| DYA | `9f75b536cff5a63d34cba43de9be8652b8bd1915` |
 | 共通 Zephyr | `10ba6d0cb38bc3d258775d27982f707599320085` |
 
 [テスト用の固定一覧](tests/ci/pins.json)では補助ライブラリ・コアのビルド依存・
 SDK イメージも固定します。他のリビジョンには個別の検証が必要です。
 隣接リポジトリ、AKKB46 の設定、非公開キャッシュへの依存はありません。
+ネットワークで準備するには、選択した全コミットを新しいrunnerから取得できる必要があります。
+正確でクリーンなローカルチェックアウトでオフライン準備はできますが、
+リモートでの取得可能性やhosted CIの成功を示すものではありません。
 [CI の再現手順](tests/README.md#reproducing-ci)、[テスト契約](tests/maintenance.json)、
 [検証と実機受け入れの手順](docs/validation.md)を参照してください。
 ホスト上の CI を実行する前に成功バッジを掲示することはしません。
@@ -140,3 +145,59 @@ Flash／RAM の増減は実際のリンク結果とログ設定で確認して�
 ## ライセンス
 
 GPL-3.0-only です。[LICENSE](LICENSE)を参照してください。
+
+## 任意のsplit activity方針
+
+split方針は選択ホスト方針とは独立しています。送信側centralで、設定されたpeerが
+単一のときだけ有効にし、peripheralと設定リセット用イメージでは無効にします。
+`ZMK_BLE_LINK_POLICY`、Studio、Messengerには依存しません。役割と採用する数値は
+キーボード設定が担当し、状態の調整と直接検証はこのモジュールが担当します。
+
+```conf
+CONFIG_ZMK_BLE_SPLIT_POLICY=y
+CONFIG_ZMK_BLE_SPLIT_POLICY_IDLE_INTERVAL=24
+# ACTIVEでは既存のZMK split設定を使います。例:
+# CONFIG_ZMK_SPLIT_BLE_PREF_INT=6
+# CONFIG_ZMK_SPLIT_BLE_PREF_LATENCY=30
+# CONFIG_ZMK_SPLIT_BLE_PREF_TIMEOUT=400
+```
+
+intervalの単位は1.25msで、6は7.5ms、24は30msです。latency30は省略できる接続
+イベント数で、ミリ秒ではありません。timeoutの単位は10msで、400は4秒です。
+idleの対応範囲は7..48で、activeより長くする必要があります。コンパイル時に
+`timeout*8 > 2*idle_interval*(latency+1)` を確認します。ホスト設定、広告、bond、
+PHY、ペイロード長、永続設定は変更しません。
+
+ZMKのACTIVEでは通常のsplit設定、IDLEでは長いintervalを要求し、SLEEPでは新たな
+要求を止めます。保存されたactivity時間はZMKと選択した設定担当に残ります。
+必要な最初のACTIVE復帰は、このモジュールの500ms要求間隔を待たずに1回試みます。
+この間隔は担当モジュールの方針であり、コアが強制するBLE遅延ではありません。
+idle要求と拒否後の再試行では間隔を保ちます。受理済み手続きは途中取消せず、
+APIが戻った後、一致する適用値の観測または最大5秒の待機を経て最新のactivity状態を
+再評価します。最初のACTIVE復帰もこの受理済み手続きの待機は省略せず、5秒で
+コントローラー側の適用が完了するという保証ではありません。
+収束しない連続試行は最大3回で、状態・接続の変更と
+収束で回数を戻します。値が一致した後や試行上限後に、idle周期処理は残りません。
+API成功は適用の証明ではなく、同期API自体の待ち時間はこれらの上限とは別です。
+
+既定identityの接続済みLE centralだけを対象にします。設定peerは単一が必須で、
+実際に対象が複数なら処理を拒否します。5ホストと同時接続していても、ホスト側の
+peripheralリンクは対象外です。ホストとsplitで選択・世代・試行回数を共有せず、
+一時的な接続参照は次のworker実行まで保持しません。
+
+追加スレッド、heap、永続化はありません。固定領域は状態1個、遅延work1個、lock・
+generation・indexです。選択した32bit ARM構成の書換え可能symbolは整列前97バイト
+（40+48+8+1）で、callback・log情報・コードにはflashも使います。実際の構成の
+link mapと実行時stack境界を確認してください。log levelは
+`ZMK_BLE_LINK_POLICY_LOG_LEVEL` と共通で、splitの観測は数値だけです。
+
+キーボード側の手順で左右の通常イメージをビルド・導入します。設定やbondの消去は
+不要です。同一の導入済みhash・boot識別情報で、実際の接続条件、左右の最初の入力、
+ホストHID到着、再接続、USB変更、LED同期、消費電流を再測定してください。最初の
+split入力は、復帰要求より前に現在の接続条件で中央まで届く必要があります。
+native検証の10ms上限は、中央受信境界から制御されたBluetooth API要求までです。
+無線交渉、中央までの入力伝送、ホストHID到着の時間を保証しません。
+
+`zmk-config-akkb46` から移管したソースと検証はMITのSPDX表記と元のassertionを
+保ちます。対応は `tests/migration.json` に記録します。直接検証・故障対照はこの
+リポジトリへ集約し、キーボード側は設定・ソース・linkageの確認と実機結合を担当します。

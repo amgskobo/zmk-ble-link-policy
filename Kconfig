@@ -13,6 +13,31 @@ config ZMK_BLE_LINK_POLICY
       timeout. Remote hosts decide actual parameters; requests are bounded
       and event driven.
 
+config ZMK_BLE_SPLIT_POLICY
+    bool "Adapt the outgoing split interval to activity"
+    depends on ZMK_SPLIT_BLE && ZMK_SPLIT_ROLE_CENTRAL && BT_CENTRAL
+    depends on ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS = 1
+    default n
+    help
+      Independently manage the single outgoing central-role split link.
+      ACTIVE uses ZMK's normal split preference; IDLE uses the interval
+      below. Preserve the normal split latency and supervision timeout.
+      SLEEP schedules no further requests. Host profiles and their selected
+      endpoint policy are separate and are never promoted by this policy.
+      Requires exactly one configured split peer; ambiguous actual central
+      links are rejected. No heap, new thread or periodic settled-idle work.
+
+config ZMK_BLE_SPLIT_POLICY_IDLE_INTERVAL
+    int "Idle split interval (1.25 ms units)"
+    depends on ZMK_BLE_SPLIT_POLICY
+    range 7 48
+    default 24
+    help
+      24 is 30 ms. This must exceed ZMK_SPLIT_BLE_PREF_INT and satisfy
+      the supervision-timeout bound with ZMK's preferred latency/timeout.
+      Compilation checks both constraints. Peers may refuse the request;
+      an accepted request is not proof of applied radio parameters.
+
 config ZMK_BLE_LINK_POLICY_LOG_LEVEL
     int "BLE link policy log level"
     range 0 4

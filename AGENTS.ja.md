@@ -6,17 +6,23 @@
 
 ## 責務と維持する契約
 
-- 未変更の上流ZMKとDYAを対象に、選択ホストのactive・idle接続方針、状態遷移の調整、数値観測、直接検証を担当する。
+- 未変更の上流ZMKとDYAを対象に、選択ホストと任意の単一split peerのactive・idle接続方針、状態遷移の調整、数値観測、直接検証を担当する。
+  ホストとsplitの状態、役割の条件、要求回数・時間の上限を独立させる。
   配線、有効モジュール、製品既定値、分割接続とHIDの統合はキーボード側が担当する。
   無関係なアプリ・移行の要件を持ち込まない。
   広告、プロファイル・ボンド、PHY、パケット長、転送プロトコル、HID調停は各担当へ任せる。
   `BT_PERIPHERAL_PREF_*` と接続オブジェクト数は統合側が決める。
 
-- activeを選ぶのは選択中のBLE HID接続先だけとし、USB接続または接続先なしではactiveなBLEホストを置かない。
+- ホスト方針のactiveを選ぶのは選択中のBLE HID接続先だけとし、USB接続または接続先なしではactiveなBLEホストを置かない。
   既定identityのperipheral役割で接続中の既知の論理プロファイル0..4を管理する。
-  guest、別identity、切断済みの接続、分割接続・centralのリンクを除外し、アプリ通信でホストをactiveへ昇格させない。
+  ホスト方針はguest、別identity、切断済みの接続、分割接続・centralのリンクを除外し、アプリ通信でホストをactiveへ昇格させない。
 
-- 選択ホスト優先の調整、worker一回につきパラメーターAPI呼び出し一回、選択を再確認した後の実行可能な待機要求の即時継続を保つ。
+- 独立して有効化するsplit方針は、既定identityの単一の送信側central peerを管理し、実際の接続が曖昧なら拒否する。
+  ACTIVE・IDLE・SLEEPはZMK activityで選び、ホスト選択やアプリ通信でsplitの状態を選ばない。
+  最初のACTIVE復帰要求、idle・再試行の最小間隔、受理済み手続きと接続世代の保護、収束・試行上限後の休止を保つ。
+  キーボードのピン・位置・左右の名称をモジュールの前提にせず、splitの直接検証と故障対照はこのリポジトリに置く。
+
+- ホスト方針では、選択ホスト優先の調整、worker一回につきパラメーターAPI呼び出し一回、選択を再確認した後の実行可能な待機要求の即時継続を保つ。
   延期で試行回数を消費せず、idle要求を広げない。
   ホストごとの独立性、世代・古いscanの遮断、切断・初期化、最新選択への集約を維持する。
   テストとともに意図的に変える場合を除き、試行3回、コマンド間隔5秒、受理済み要求の確定待ち20秒、idle猶予6秒を保つ。
@@ -104,12 +110,15 @@
 
 - 接続方針・parser・タイムアウトの純粋ロジック変更では、ホストの全検証と影響する名前付き対照条件を実行し、調整処理のインターフェース・時刻境界を変える場合はネイティブ・両コアも確認する。
   ライフサイクル・キュー・公開API・Kconfig・モジュール統合では、ホスト、ネイティブ・mutation検証、未変更の上流ZMK・DYAの両ファームウェア構成を保つ。
-  CI・依存・テスト基盤変更では四つすべての検証と準備時の保護条件を確認する。
+  CI・依存・テスト基盤変更では宣言された全検証レーンと準備時の保護条件を確認する。
   統合モード・診断設定・役割・要求拒否のケースを保ち、`--only` による選択実行を全体確認としない。
 
 - 準備済みコンテナの入口: `python3 tests/run-ci.py --suite host --output NEW_HOST_OUTPUT`。
 
 - 準備済みコンテナの入口: `python3 tests/run-ci.py --suite native --workspace RESOLVED_STOCK --output NEW_NATIVE_OUTPUT`。
+
+- 準備済みコンテナのsplit入口:
+  `python3 tests/run-ci.py --suite split --workspace RESOLVED_STOCK --dya-workspace RESOLVED_DYA --output NEW_SPLIT_OUTPUT`。
 
 - 準備済みコンテナの入口: `python3 tests/run-ci.py --suite integration --core upstream --workspace RESOLVED_STOCK --output NEW_STOCK_OUTPUT`。
 

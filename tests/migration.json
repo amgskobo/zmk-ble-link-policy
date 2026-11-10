@@ -29,5 +29,22 @@
   "added_regression": "Independent test_irrelevant_parameters_do_not_schedule retains excluded/unreadable parameter notifications after the original traffic scenario moves to Messenger. The unrelated-param-wake compiled fault survived before this assertion and must fail afterwards.",
   "post_migration_extension": "Request capacity/yield: original fixtures/faults retained; adds pure capacity scenario and4 controls, native queued-work/reselection/info-race/clock cases and3 controls, observations parser fixtures. Totals at that stage:59 pure faults;31/9 native cases;40 native faults.",
   "review_extension": "Retains every existing assertion and control; adds unmanaged-selection normalization (32 default/9 fast cases and41 native controls total) and real Git dependency-cleanliness/before-after drift regressions.",
-  "quiet_wake_extension": "The original32 default and9 fast cases and41 native controls remain. A third preemptible binary repeats all32 default cases and adds a real higher-priority endpoint producer after quiet unlock (33 cases); quiet-self-cancel-loses-wake restores original production cancellation and must fail at runtime (42 controls)."
+  "quiet_wake_extension": "The original32 default and9 fast cases and41 native controls remain. A third preemptible binary repeats all32 default cases and adds a real higher-priority endpoint producer after quiet unlock (33 cases); quiet-self-cancel-loses-wake restores original production cancellation and must fail at runtime (42 controls).",
+  "split_owner_migration": {
+    "from": "zmk-config-akkb46",
+    "production": {
+      "src/split_idle_power.c": "src/split_service.c",
+      "src/split_idle_power_policy.h": "src/split_policy.h"
+    },
+    "fixtures": "tests/split-idle-power -> tests/native/split-links; original22/23/9 case families and five controls retained; local/split names replace keyboard-side names, source positions are synthetic. Stock real activity9 and a matching old-gate control are added.",
+    "original_evidence": "Scoped original source/assertions and pre-migration failures are retained in private external2026-11-07 active-wake and2026-11-09 owner-migration evidence, not required to execute tests.",
+    "replacement_map": {
+      "state_request_epoch_retry": "main.c default22 + preempt23",
+      "quiet_preempting_wake": "main.c preempt case and quiet-wake-cancelled control",
+      "actual_activity_inputs_cycles_busy": "activity.c9 on DYA, same9 on stock; DYA public timeout setter preserved under its core flag",
+      "five_original_controls": "idle-stays-fast, extra-retry, host-role-selected, quiet-wake-cancelled, active-gated-dya; stock active-gated added"
+    },
+    "license": "Existing MIT SPDX notices retained; host policy license unchanged.",
+    "keyboard_remaining_scope": "Opt-in, role and numeric defaults; actual source/symbol/config admission; all-role production and physical acceptance."
+  }
 }

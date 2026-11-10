@@ -9,6 +9,7 @@
     "python3 tests/prepare-workspace.py --core upstream --output NEW_WORKSPACE --allow-network",
     "python3 tests/run-ci.py --suite host --output NEW_FOLDER",
     "python3 tests/run-ci.py --suite native --workspace PATH --output NEW_FOLDER",
+    "python3 tests/run-ci.py --suite split --workspace STOCK --dya-workspace DYA --output NEW_FOLDER",
     "python3 tests/run-ci.py --suite integration --core upstream --workspace PATH --output NEW_FOLDER",
     "python3 tests/run-ci.py --suite integration --core dya --workspace PATH --output NEW_FOLDER",
     "python3 tests/run-host.py --output NEW_FOLDER",
@@ -21,11 +22,12 @@
   "implementation_families": {
     "pure_policy": "tests/host/test_link_policy.c; original55 plus4 capacity controls (59 total)",
     "kernel_lifecycle": "tests/native/idle-links; original27 plus5 default (32 total) +9 fast retained; preemptible variant repeats all32 and adds quiet-unlock endpoint admission (33). Original37 plus4 coordinator controls retained and quiet-self-cancel-loses-wake added (42 total); unmanaged selected profiles normalize to slot255",
-    "module_isolation": "tests/test_ownership.py; actual stock/DYA linked builds in all six configurations documented in tests/README.md; peripheral gate and explicit unsupported request",
+    "module_isolation": "test_ownership.py and both unchanged stock/DYA linked builds: original six configurations retained plus split-only, host-and-split, split-disabled and peripheral/multi-peer requested-option rejection. Actual config, compiler paths and callback symbols prove independent opt-ins.",
     "timeout_width": "tests/test_timeout_width.py: actual helper, full uint32 numeric oracle,32/64-bit ticks, optimization/coverage/ABI and named compiled faults",
     "work_observations": "tests/observations.py; tests/test_observations.py: schema/width, order/wrap/reset, invalid/unavailable, topology/stale cohorts, timing sum/max/call-count consistency, quota and peak provenance. Physical wall/HID/RF remain separate.",
-    "ci_and_reproduction": "test_ci.py; test_dependency_identity.py; ci_support.py; prepare-workspace.py; run-ci.py: immutable graph, actual-head and clean-source checks before/after execution, fresh outputs, explicit fetch/local cloning, failure exit/order/times, source drift failure and all supported hosted lanes. Owner behavioral assertions remain in original entries.",
-    "native_admission": "native_output.py; test_native_output.py: shared diagnostic rejection in both native launchers, original exit/marker/nonempty completion and runtime-assertion requirements, benign locationless labels. native/sanitizer_control.c and native/check_admission.py: separate recovering ASan/UBSan controls preserve all cases, exit zero and reject the same ELF in three fresh processes; not clean product results."
+    "ci_and_reproduction": "test_ci.py; test_dependency_identity.py; ci_support.py; prepare-workspace.py; run-ci.py: immutable graph, actual-head and clean-source checks before/after execution, fresh outputs, explicit fetch/local cloning, failure exit/order/times, source drift failure and all supported hosted lanes. SplitWorkerBudget observes the actual split CLI/build boundary: absent-environment default2, positive environment/minimum1, explicit CLI precedence and invalid-value refusal before dependencies/build. Owner behavioral assertions remain in original entries.",
+    "native_admission": "native_output.py; test_native_output.py: shared diagnostic rejection in both native launchers, original exit/marker/nonempty completion and runtime-assertion requirements, benign locationless labels. native/sanitizer_control.c and native/check_admission.py: separate recovering ASan/UBSan controls preserve all cases, exit zero and reject the same ELF in three fresh processes; not clean product results.",
+    "split_policy": "tests/native/split-links and native/run-split.py: original22 default/23 preempt/9 DYA activity cases retained; stock activity9 added. Each of four binaries runs3 times. Six named runtime controls run3 times, with designated-case assertion admission and sanitizer rejection. Single-peer/default-identity/central gating; five-host exclusion; immediate ACTIVE request,500ms idle/retry gate,5s accepted settlement, stale epochs, quiet preempting wake and real local/received key/proxy input. Native receive-to-request oracle10ms is not radio/HID timing."
   },
   "gaps": [
     "Physical host acceptance, negotiated timing, HID delivery, split/radio/power/reset require matching hardware evidence."
@@ -36,7 +38,7 @@
   },
   "pins": {
     "stock-zmk": "5b51501fead672c41b5cfb396f3dafe0894bf4e9",
-    "dya": "e5c9b6915b56801193e359dd9bad4a167ce0d1b8",
+    "dya": "9f75b536cff5a63d34cba43de9be8652b8bd1915",
     "zephyr": "10ba6d0cb38bc3d258775d27982f707599320085"
   },
   "ci_pins": "tests/ci/pins.json",

@@ -5,19 +5,27 @@ together.
 
 ## Scope and contract
 
-- Own selected-host active/idle connection policy, lifecycle coordination, numeric observations and
-  direct tests on unchanged stock ZMK and DYA. Keyboard wiring, enabled module graphs, production
-  defaults and split/HID composition stay with the integrating keyboard; keep unrelated
+- Own selected-host and optional single-peer split active/idle connection policies, lifecycle
+  coordination, numeric observations and direct tests on unchanged stock ZMK and DYA.
+  Keep host and split state, role gates and request budgets independent. Keyboard wiring, enabled
+  module graphs, production defaults and split/HID composition stay with the integrating keyboard; keep unrelated
   application/migration requirements out of this module. Advertising, profiles/bonds, PHY, packet
   sizes, transfer protocols and HID arbitration stay with their owners; integrators own
   `BT_PERIPHERAL_PREF_*` values and connection-object capacity.
 
-- The selected BLE HID endpoint alone selects active mode; USB/no endpoint selects no active BLE
-  host. Manage known connected logical profiles 0..4 in peripheral role on the default identity.
-  Exclude guests, other identities, disconnected objects and split/central links; application
-  traffic does not promote a host.
+- For host policy the selected BLE HID endpoint alone selects active mode; USB/no endpoint selects
+  no active BLE host. Manage known connected logical profiles 0..4 in peripheral role on the default
+  identity. The host policy excludes guests, other identities, disconnected objects and split/central
+  links; application traffic does not promote a host.
 
-- Preserve selected-first reconciliation, one parameter API call per worker and immediate
+- The independently enabled split policy manages one configured outgoing central-role peer on the
+  default identity and rejects ambiguous actual topologies. ZMK activity selects ACTIVE/IDLE/SLEEP;
+  host selection and application traffic do not select split mode. Preserve the first immediate
+  ACTIVE restoration attempt, minimum idle/retry spacing, accepted-procedure/connection-epoch fences
+  and quiescence after convergence or exhaustion. Keyboard pins, positions and left/right naming
+  are not module assumptions; direct split fixtures and controls stay here.
+
+- For the host policy preserve selected-first reconciliation, one parameter API call per worker and immediate
   continuation of ready deferred requests after rereading selection. Deferral consumes no attempt
   and does not widen idle requests. Retain per-host independence, generation/stale-scan fences,
   disconnect/reset and latest-selection coalescing; preserve three attempts, a five-second command
@@ -112,14 +120,17 @@ together.
 - Pure policy/parser/timeout changes: run the full host lane and affected named controls; include
   native/both-core checks when the coordinator interface or timing boundary changes.
   Lifecycle/queues/public APIs/Kconfig/module integration: retain host, native/mutation and both
-  unchanged stock/DYA firmware lanes. CI/dependency/test infrastructure changes require all four
-  complete lanes and preparation guards, retaining integration modes, diagnostic settings, roles and
+  unchanged stock/DYA firmware lanes. CI/dependency/test infrastructure changes require all
+  declared complete lanes and preparation guards, retaining integration modes, diagnostic settings, roles and
   rejected-request cases; an `--only` selection is not a full matrix.
 
 - Prepared-container entry: `python3 tests/run-ci.py --suite host --output NEW_HOST_OUTPUT`.
 
 - Prepared-container entry:
   `python3 tests/run-ci.py --suite native --workspace RESOLVED_STOCK --output NEW_NATIVE_OUTPUT`.
+
+- Prepared-container split entry:
+  `python3 tests/run-ci.py --suite split --workspace RESOLVED_STOCK --dya-workspace RESOLVED_DYA --output NEW_SPLIT_OUTPUT`.
 
 - Prepared-container entry:
   `python3 tests/run-ci.py --suite integration --core upstream --workspace RESOLVED_STOCK --output NEW_STOCK_OUTPUT`.
