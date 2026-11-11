@@ -87,7 +87,7 @@ python3 tests/run-integration.py --workspace RESOLVED_WORKSPACE \
 Run the integration entry once for unchanged stock ZMK and once for unchanged
 DYA, with explicit selected module roots from west list. The pinned cores are
 stock `5b51501fead672c41b5cfb396f3dafe0894bf4e9` and DYA
-`9f75b536cff5a63d34cba43de9be8652b8bd1915`, with Zephyr
+`e5c9b6915b56801193e359dd9bad4a167ce0d1b8`, with Zephyr
 `10ba6d0cb38bc3d258775d27982f707599320085`. Existing outputs fail.
 Both native mutation and integration entries accept `--build-root` for a fresh
 Linux filesystem build directory while keeping records/raw logs in `--output`.

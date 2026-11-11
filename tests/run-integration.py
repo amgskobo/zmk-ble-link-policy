@@ -90,7 +90,7 @@ modules.append(str(root))
 core_revision = next(x["revision"] for x in identities if x["name"] == "zmk")
 assert core_revision in (
     "5b51501fead672c41b5cfb396f3dafe0894bf4e9",
-    "9f75b536cff5a63d34cba43de9be8652b8bd1915",
+    "e5c9b6915b56801193e359dd9bad4a167ce0d1b8",
 ), core_revision
 pins = load_pins()
 core = next(

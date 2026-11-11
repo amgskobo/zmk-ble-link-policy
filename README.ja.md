@@ -57,7 +57,7 @@ timeout の単位は 10 ms（400 は 4 秒）です。この例は既存の接�
 | コア | 検証対象のリビジョン |
 | --- | --- |
 | Stock ZMK | `5b51501fead672c41b5cfb396f3dafe0894bf4e9` |
-| DYA | `9f75b536cff5a63d34cba43de9be8652b8bd1915` |
+| DYA | `e5c9b6915b56801193e359dd9bad4a167ce0d1b8` |
 | 共通 Zephyr | `10ba6d0cb38bc3d258775d27982f707599320085` |
 
 [テスト用の固定一覧](tests/ci/pins.json)では補助ライブラリ・コアのビルド依存・

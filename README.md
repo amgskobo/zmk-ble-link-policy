@@ -61,7 +61,7 @@ The integration matrix selects these unchanged commits:
 | Core | Selected test revision |
 | --- | --- |
 | Stock ZMK | `5b51501fead672c41b5cfb396f3dafe0894bf4e9` |
-| DYA | `9f75b536cff5a63d34cba43de9be8652b8bd1915` |
+| DYA | `e5c9b6915b56801193e359dd9bad4a167ce0d1b8` |
 | Shared Zephyr | `10ba6d0cb38bc3d258775d27982f707599320085` |
 
 [The complete test pins](tests/ci/pins.json) also fix the supporting libraries,
