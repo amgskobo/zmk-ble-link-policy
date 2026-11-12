@@ -133,7 +133,13 @@ firmware, hosts, selected routes and workloads; pair this with real host HID
 arrivals before claiming an end-to-end improvement.
 
 Storage is a fixed five-slot policy table, one spinlock and one delayed work
-item. It retains no connection reference between scans, allocates no thread
+item. The independent boolean flags share storage under the policy lock;
+all timestamp, sequence and disconnect-generation fields remain 32 bits.
+With the selected 32-bit ARM compiler the table uses 164 bytes (32 per slot
+plus selection/alignment), down from 204 bytes with byte-sized flags.
+Layout and generated stack frames depend on the compiler; inspect the linked
+map and compiler stack reports for the actual build.
+It retains no connection reference between scans, allocates no thread
 or heap and leaves no timer when reconciliation is complete. A concurrent
 endpoint wake can queue the still-running work without a cancellation window. Retries use the
 existing system workqueue; numeric logs contain no addresses or payloads.

@@ -19,17 +19,19 @@
 #define ZBLP_LINK_FAILOVER_ATTEMPTS 2U
 
 struct zblp_link_slot {
-    bool mode_valid;
-    bool fast;
-    bool waiting;
-    bool gate_valid;
-    bool preference_valid;
-    bool preference_fast;
-    bool idle_gate;
-    bool observed_fast;
-    bool observed_idle;
-    bool idle_wide;
-    bool fail_over;
+    /* All accesses share the service's policy lock. Keep each independent
+     * boolean without spending a byte per flag in every host slot. */
+    bool mode_valid : 1;
+    bool fast : 1;
+    bool waiting : 1;
+    bool gate_valid : 1;
+    bool preference_valid : 1;
+    bool preference_fast : 1;
+    bool idle_gate : 1;
+    bool observed_fast : 1;
+    bool observed_idle : 1;
+    bool idle_wide : 1;
+    bool fail_over : 1;
     uint8_t attempts;
     uint32_t generation;
     uint32_t retry_ms;
